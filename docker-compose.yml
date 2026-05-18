@@ -1,0 +1,50 @@
+services:
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "${FRONTEND_PORT:-5180}:${FRONTEND_PORT:-5180}"
+    environment:
+      FRONTEND_PORT: ${FRONTEND_PORT:-5180}
+      VITE_FRONTEND_PORT: ${FRONTEND_PORT:-5180}
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8010}
+      VITE_APP_TITLE: ${VITE_APP_TITLE:-Dog Health MVP}
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "${BACKEND_PORT:-8010}:${BACKEND_PORT:-8010}"
+    environment:
+      BACKEND_PORT: ${BACKEND_PORT:-8010}
+      APP_NAME: ${APP_NAME:-dog-health-api}
+      APP_ENV: ${APP_ENV:-development}
+      FRONTEND_ORIGINS: ${FRONTEND_ORIGINS:-http://localhost:5180,http://127.0.0.1:5180}
+      POSTGRES_HOST: ${POSTGRES_HOST:-db}
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-dog_health}
+      POSTGRES_USER: ${POSTGRES_USER:-dog_health}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dog_health_password}
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - db
+
+  db:
+    image: postgres:16-alpine
+    ports:
+      - "${POSTGRES_PORT:-5500}:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-dog_health}
+      POSTGRES_USER: ${POSTGRES_USER:-dog_health}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dog_health_password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
