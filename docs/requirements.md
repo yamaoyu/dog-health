@@ -9,6 +9,7 @@ This application helps dog owners track:
 * medications
 * symptoms
 * vet visits
+* walk history
 
 The project focuses on:
 
@@ -16,12 +17,13 @@ The project focuses on:
 * simple implementation
 * explicit frontend/backend separation
 * Docker-based development
+* iterative MVP development
 
 ---
 
 # Technical Constraints
 
-* Vue 3
+* Vue 3 + TypeScript
 * FastAPI
 * PostgreSQL
 * Docker Compose
@@ -33,6 +35,35 @@ The project focuses on:
 * maintainability over scalability
 * avoid over abstraction
 * MVP first
+* simple relational data modeling
+* backend-driven API design
+
+---
+
+# Domain Concepts
+
+## Owners
+
+Owners can manage multiple dogs.
+
+## Dogs
+
+Dogs can belong to multiple owners.
+
+## Events
+
+Dog activities are stored as events.
+
+Examples:
+
+* meal
+* walk
+* medicine
+* symptoms
+* hospital
+* memo
+
+Event types are initially fixed for simplicity.
 
 ---
 
@@ -40,19 +71,22 @@ The project focuses on:
 
 ## Goal
 
-foundation setup
+Create a minimal but functional dog health tracking application.
 
 ## Included
 
-* initial setup
-* connect frontend,  backend and db
+* owner management
+* dog management
+* owner-dog relationship
 
 ## Not Included
 
-* dog profile CRUD
-* daily health logs
-* recent history view
+* event recording
+* event history view
+* authentication
 * notifications
 * analytics
 * AI diagnosis
-* multi-user support
+* custom event types
+* admin dashboard
+* production infrastructure
