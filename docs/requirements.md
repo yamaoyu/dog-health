@@ -75,8 +75,8 @@ Create a minimal but functional dog health tracking application.
 
 ## Included
 
-* owner management
-* dog management
+* owner management　(create and get)
+* dog management (create and get)
 * owner-dog relationship
 
 ## Not Included

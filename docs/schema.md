@@ -10,6 +10,10 @@ Represents dog owners.
 | ---------- | --------- | ------------- |
 | owner_id   | uuid      | primary key   |
 | name       | text      | display name  |
+| login_id   | text      | login id      |
+
+owner_id is used to system
+The login ID is used to identify users, and each user can choose their own ID.
 
 ---
 

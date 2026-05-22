@@ -10,12 +10,12 @@
 
 ## Database
 
-* [ ] create owners table
-* [ ] create dogs table
-* [ ] create owner_dogs table
-* [ ] add foreign key constraints
-* [ ] add unique constraint for owner_dogs
-* [ ] setup Alembic migrations
+* [x] create owners table
+* [x] create dogs table
+* [x] create owner_dogs table
+* [x] add foreign key constraints
+* [x] add unique constraint for owner_dogs
+* [x] setup Alembic migrations
 
 read docs/schema.md to get schema info
 
@@ -23,10 +23,12 @@ read docs/schema.md to get schema info
 
 ## Backend
 
-* [ ] create SQLAlchemy models
-* [ ] implement owners CRUD
-* [ ] implement dogs CRUD
-* [ ] implement owner_dogs API
+* [x] create SQLAlchemy models
+* [x] implement owners create API
+* [x] implement owners read API
+* [x] implement dogs create API
+* [x] implement dogs read API
+* [x] implement owner_dogs read API
 
 ---
 

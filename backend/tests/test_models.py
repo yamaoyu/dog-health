@@ -11,6 +11,8 @@ def test_owner_model_matches_schema() -> None:
     assert table.name == "owners"
     assert table.c.owner_id.primary_key is True
     assert table.c.name.nullable is False
+    assert table.c.login_id.nullable is False
+    assert table.c.login_id.unique is True
 
 
 def test_dog_model_matches_schema() -> None:

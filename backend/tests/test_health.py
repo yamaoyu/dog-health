@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-from app.database import DatabaseStatus
+from app.db.database import DatabaseStatus
 from app.main import app
 
 

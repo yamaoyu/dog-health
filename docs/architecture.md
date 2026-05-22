@@ -83,3 +83,17 @@ Containers:
 * frontend
 * backend
 * db
+
+# Directory structure
+## backend
+Service/repository layers are intentionally omitted during MVP phase.
+
+alembic/
+app/
+　├ routers/
+　├ models/
+　├ schemas/
+　├ db/
+　├ config.py
+　├ main.py
+tests/

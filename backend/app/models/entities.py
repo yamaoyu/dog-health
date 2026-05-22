@@ -7,7 +7,7 @@ from sqlalchemy import Date, ForeignKey, String, Text, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.database import Base
+from app.db.database import Base
 
 
 class Owner(Base):
@@ -19,6 +19,7 @@ class Owner(Base):
         server_default=text("gen_random_uuid()"),
     )
     name: Mapped[str] = mapped_column(Text, nullable=False)
+    login_id: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
 
     dogs: Mapped[list["OwnerDog"]] = relationship(back_populates="owner")
 
