@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
 from app.db.database import check_database_connection
-from app.routers import dogs_router, owners_router
+from app.routers import dogs_router, login_router, owners_router
 from app.schemas.health_check import HealthCheckResponse
 
 
@@ -22,6 +22,7 @@ app.add_middleware(
 )
 
 app.include_router(dogs_router)
+app.include_router(login_router)
 app.include_router(owners_router)
 
 
