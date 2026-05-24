@@ -68,7 +68,6 @@ def test_create_dog_creates_dog_and_owner_link() -> None:
             "owner_id": str(owner_id),
             "name": "  Pochi  ",
             "birthday": "2020-01-01",
-            "role": "  primary  ",
         },
     )
 
@@ -84,13 +83,12 @@ def test_create_dog_creates_dog_and_owner_link() -> None:
     assert fake_session.dogs[0].birthday == date(2020, 1, 1)
     assert fake_session.owner_dogs[0].owner_id == owner_id
     assert fake_session.owner_dogs[0].dog_id == fake_session.dogs[0].dog_id
-    assert fake_session.owner_dogs[0].role == "primary"
+    assert fake_session.owner_dogs[0].role is None
     assert response.json() == {
         "dog_id": str(fake_session.dogs[0].dog_id),
         "owner_id": str(owner_id),
         "name": "Pochi",
         "birthday": "2020-01-01",
-        "role": "primary",
     }
 
 

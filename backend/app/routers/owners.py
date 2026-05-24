@@ -57,7 +57,6 @@ def list_owner_dogs(
             dog_id=owner_dog.dog.dog_id,
             name=owner_dog.dog.name,
             birthday=owner_dog.dog.birthday,
-            role=owner_dog.role,
         )
         for owner_dog in owner.dogs
     ]

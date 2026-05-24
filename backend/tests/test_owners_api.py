@@ -117,7 +117,6 @@ def test_list_owner_dogs_returns_related_dogs() -> None:
                 "dog_id": str(dog_id),
                 "name": "Pochi",
                 "birthday": "2020-01-01",
-                "role": "primary",
             }
         ],
     }

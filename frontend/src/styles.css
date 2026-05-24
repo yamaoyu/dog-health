@@ -165,6 +165,10 @@ h2 {
   margin-top: 20px;
 }
 
+.dogs-page {
+  position: relative;
+}
+
 .page-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
@@ -302,10 +306,42 @@ h2 {
   flex-wrap: wrap;
   gap: 12px;
   align-items: center;
+  justify-content: space-between;
 }
 
 .actions-spacious {
   margin-top: 10px;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(47, 37, 29, 0.34);
+  backdrop-filter: blur(8px);
+}
+
+.modal-card {
+  width: min(520px, 100%);
+  padding: 28px;
+  border: 1px solid rgba(83, 58, 33, 0.12);
+  border-radius: 28px;
+  background: rgba(255, 252, 248, 0.96);
+  box-shadow: var(--shadow);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.modal-close-button {
+  padding: 0.7rem 1rem;
 }
 
 @media (max-width: 800px) {
@@ -335,5 +371,14 @@ h2 {
 
   .stat-grid {
     grid-template-columns: 1fr;
+  }
+
+  .modal-card {
+    padding: 22px;
+  }
+
+  .modal-header {
+    flex-direction: column;
+    align-items: stretch;
   }
 }

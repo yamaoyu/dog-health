@@ -34,7 +34,8 @@ read docs/schema.md to get schema info
 
 ## Frontend
 
-* [ ] owner selection screen
+* [x] register an owner page
+* [x] login page
 * [ ] dog list page by owner
 * [ ] dog detail page
 

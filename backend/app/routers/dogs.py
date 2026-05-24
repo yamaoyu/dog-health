@@ -39,7 +39,6 @@ def create_dog(
     owner_dog = OwnerDog(
         owner_id=owner.owner_id,
         dog_id=dog.dog_id,
-        role=payload.role,
     )
     db_session.add(owner_dog)
     db_session.commit()
@@ -50,7 +49,6 @@ def create_dog(
         owner_id=owner.owner_id,
         name=dog.name,
         birthday=dog.birthday,
-        role=owner_dog.role,
     )
 
 

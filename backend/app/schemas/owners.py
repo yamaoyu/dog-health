@@ -41,7 +41,6 @@ class OwnerDogSummary(BaseModel):
     dog_id: UUID
     name: str
     birthday: date
-    role: str | None
 
 
 class OwnerDogsResponse(BaseModel):
