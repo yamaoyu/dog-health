@@ -24,8 +24,8 @@ async function logout(): Promise<void> {
       <nav class="topbar-nav">
         <template v-if="isLoggedIn">
           <span class="owner-chip">{{ currentOwner?.name }}</span>
-          <RouterLink class="nav-link" :class="{ active: isDogsRoute }" to="/dogs">Dogs</RouterLink>
-          <button class="ghost-button" type="button" @click="logout">Logout</button>
+          <RouterLink class="nav-link" :class="{ active: isDogsRoute }" to="/dogs">犬一覧</RouterLink>
+          <button class="ghost-button" type="button" @click="logout">ログアウト</button>
         </template>
 
         <template v-else>
@@ -34,10 +34,10 @@ async function logout(): Promise<void> {
             :class="{ active: route.name === 'owner-register' }"
             to="/register"
           >
-            Create user
+            飼い主登録
           </RouterLink>
           <RouterLink class="nav-link" :class="{ active: route.name === 'login' }" to="/login">
-            Login
+            ログイン
           </RouterLink>
         </template>
       </nav>

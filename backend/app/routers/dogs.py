@@ -27,7 +27,7 @@ def create_dog(
     if owner is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="owner not found",
+            detail="飼い主が見つかりません",
         )
 
     dog = Dog(name=payload.name, birthday=payload.birthday)
@@ -59,7 +59,7 @@ def list_dog_owners(
     if dog is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="dog not found",
+            detail="犬が見つかりません",
         )
 
     owners = [

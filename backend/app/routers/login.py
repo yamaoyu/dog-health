@@ -18,7 +18,7 @@ def get_login_db_session() -> Generator[Session, None, None]:
     yield from get_db_session()
 
 
-@router.post("/login", response_model=LoginResponse)
+@router.post("/sessions", response_model=LoginResponse)
 def login(
     payload: LoginRequest,
     db_session: Session = Depends(get_login_db_session),
@@ -29,7 +29,7 @@ def login(
     if owner is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="owner not found",
+            detail="ログインIDに一致する飼い主が見つかりません",
         )
 
     return LoginResponse(

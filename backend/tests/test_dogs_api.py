@@ -121,7 +121,7 @@ def test_create_dog_returns_not_found_when_owner_missing() -> None:
     app.dependency_overrides.clear()
 
     assert response.status_code == 404
-    assert response.json() == {"detail": "owner not found"}
+    assert response.json() == {"detail": "飼い主が見つかりません"}
     assert fake_session.committed is False
     assert fake_session.dogs == []
     assert fake_session.owner_dogs == []
@@ -165,4 +165,4 @@ def test_list_dog_owners_returns_not_found_when_dog_missing() -> None:
     app.dependency_overrides.clear()
 
     assert response.status_code == 404
-    assert response.json() == {"detail": "dog not found"}
+    assert response.json() == {"detail": "犬が見つかりません"}

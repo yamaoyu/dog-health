@@ -33,7 +33,7 @@ function normalizeErrorMessage(payload: unknown, status: number): string {
     }
   }
 
-  return `Request failed with status ${status}`
+  return `リクエストに失敗しました（ステータス: ${status}）`
 }
 
 export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {

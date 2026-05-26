@@ -16,16 +16,16 @@ function validate(): string {
   const normalizedLoginId = loginId.value.trim()
 
   if (!normalizedName) {
-    return 'User name is required.'
+    return 'ユーザー名は必須です。'
   }
   if (normalizedName.length > 20) {
-    return 'User name must be 20 characters or fewer.'
+    return 'ユーザー名は20文字以内で入力してください。'
   }
   if (!normalizedLoginId) {
-    return 'Login ID is required.'
+    return 'ログインIDは必須です。'
   }
   if (normalizedLoginId.length < 4 || normalizedLoginId.length > 20) {
-    return 'Login ID must be between 4 and 20 characters.'
+    return 'ログインIDは4文字以上20文字以下で入力してください。'
   }
 
   return ''
@@ -54,7 +54,7 @@ async function submit(): Promise<void> {
       },
     })
   } catch (error) {
-    errorMessage.value = toErrorMessage(error, 'Failed to create user.')
+    errorMessage.value = toErrorMessage(error, 'ユーザーの登録に失敗しました。')
   } finally {
     isSubmitting.value = false
   }
@@ -64,54 +64,51 @@ async function submit(): Promise<void> {
 <template>
   <section class="page-grid">
     <article class="panel strong">
-      <p class="eyebrow">Owner Setup</p>
-      <h2>Create a user before tracking any dogs.</h2>
+      <h2>飼い主登録</h2>
       <p class="lead">
-        Register the owner name and login ID first. This app uses the login ID later to enter the
-        dogs screen.
+        飼い主名とログインIDを登録します。登録したログインIDでログインしてください。
       </p>
 
       <form class="form" @submit.prevent="submit">
         <div class="field">
-          <label for="owner-name">User name</label>
+          <label for="owner-name">飼い主名</label>
           <input id="owner-name" v-model="name" autocomplete="name" maxlength="20" />
-          <p class="hint">Required. Up to 20 characters.</p>
+          <p class="hint">必須です。20文字以内で入力してください。</p>
         </div>
 
         <div class="field">
-          <label for="owner-login-id">Login ID</label>
+          <label for="owner-login-id">ログインID</label>
           <input id="owner-login-id" v-model="loginId" autocomplete="username" maxlength="20" />
-          <p class="hint">Required. Use 4-20 characters.</p>
+          <p class="hint">必須です。4文字以上20文字以下で入力してください。</p>
         </div>
 
         <p v-if="errorMessage" class="error-text">{{ errorMessage }}</p>
 
         <div class="actions">
           <button class="primary-button" type="submit" :disabled="isSubmitting">
-            {{ isSubmitting ? 'Creating user...' : 'Create user' }}
+            {{ isSubmitting ? '登録中...' : '飼い主を登録' }}
           </button>
-          <RouterLink class="nav-link" to="/login">Already have a login ID</RouterLink>
+          <RouterLink class="nav-link" to="/login">ログインIDをお持ちの方はこちら</RouterLink>
         </div>
       </form>
     </article>
 
     <aside class="panel stack">
       <div class="callout">
-        <h3>Current MVP scope</h3>
+        <h3>現在のMVP範囲</h3>
         <p class="meta-copy">
-          Dog creation is intentionally out of scope. A newly created user can log in right away and
-          see an empty dogs list.
+          この段階ではまず基本的な登録とログインに絞っています。新しく作成した飼い主はすぐにログインでき、最初は空の犬一覧が表示されます。
         </p>
       </div>
 
       <ul class="meta-list">
         <li>
-          <strong>Explicit contract</strong>
-          <p class="meta-copy">The backend validates both fields and rejects duplicate login IDs.</p>
+          <strong>明確な入力ルール</strong>
+          <p class="meta-copy">バックエンドで両方の項目を検証し、重複するログインIDは拒否します。</p>
         </li>
         <li>
-          <strong>Simple flow</strong>
-          <p class="meta-copy">Create the user first, then move to login with the same ID.</p>
+          <strong>シンプルな流れ</strong>
+          <p class="meta-copy">最初に飼い主を登録し、その後同じログインIDでログインします。</p>
         </li>
       </ul>
     </aside>

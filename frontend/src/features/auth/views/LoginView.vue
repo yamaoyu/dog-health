@@ -11,17 +11,17 @@ const router = useRouter()
 const loginId = ref(typeof route.query.loginId === 'string' ? route.query.loginId : '')
 const errorMessage = ref('')
 const successMessage = ref(
-  route.query.created === '1' ? 'User created. Log in with the registered login ID.' : '',
+  route.query.created === '1' ? 'ユーザーを登録しました。登録したログインIDでログインしてください。' : '',
 )
 const isSubmitting = ref(false)
 
 function validate(): string {
   const normalizedLoginId = loginId.value.trim()
   if (!normalizedLoginId) {
-    return 'Login ID is required.'
+    return 'ログインIDは必須です。'
   }
   if (normalizedLoginId.length < 4 || normalizedLoginId.length > 20) {
-    return 'Login ID must be between 4 and 20 characters.'
+    return 'ログインIDは4文字以上20文字以下で入力してください。'
   }
 
   return ''
@@ -43,7 +43,7 @@ async function submit(): Promise<void> {
     setCurrentOwner(owner)
     await router.push({ name: 'dogs' })
   } catch (error) {
-    errorMessage.value = toErrorMessage(error, 'Failed to log in.')
+    errorMessage.value = toErrorMessage(error, 'ログインに失敗しました。')
   } finally {
     isSubmitting.value = false
   }
@@ -53,18 +53,17 @@ async function submit(): Promise<void> {
 <template>
   <section class="page-grid">
     <article class="panel strong">
-      <p class="eyebrow">Temporary Login</p>
-      <h2>Log in with your registered login ID.</h2>
+      <p class="eyebrow">ログイン</p>
+      <h2>登録済みのログインIDでログインしてください。</h2>
       <p class="lead">
-        This MVP keeps authentication intentionally simple. No password, no persistence, just owner
-        resolution by login ID.
+        このMVPでは認証をシンプルにしています。パスワードは使わず、ログインIDで飼い主を特定します。
       </p>
 
       <form class="form" @submit.prevent="submit">
         <div class="field field-spacious">
-          <label for="login-id">Login ID</label>
+          <label for="login-id">ログインID</label>
           <input id="login-id" v-model="loginId" autocomplete="username" maxlength="20" />
-          <p class="hint">Use 4-20 characters. Spaces around the value are trimmed.</p>
+          <p class="hint">4文字以上20文字以下で入力してください。</p>
         </div>
 
         <p v-if="successMessage" class="success-text">{{ successMessage }}</p>
@@ -72,30 +71,29 @@ async function submit(): Promise<void> {
 
         <div class="actions">
           <button class="primary-button" type="submit" :disabled="isSubmitting">
-            {{ isSubmitting ? 'Logging in...' : 'Login' }}
+            {{ isSubmitting ? 'ログイン中...' : 'ログイン' }}
           </button>
-          <RouterLink class="nav-link" to="/register">Create user first</RouterLink>
+          <RouterLink class="nav-link" to="/register">ユーザー登録をする</RouterLink>
         </div>
       </form>
     </article>
 
     <aside class="panel stack">
       <div class="callout">
-        <h3>What happens next</h3>
+        <h3>ログイン後の流れ</h3>
         <p class="meta-copy">
-          After login, the app loads the dogs linked to the selected owner. A newly created owner is
-          expected to see 0 dogs for now.
+          ログイン後は、その飼い主に紐づく犬の一覧を読み込みます。新しく作成した飼い主では、最初は0件が表示されます。
         </p>
       </div>
 
       <ul class="meta-list">
         <li>
-          <strong>No password</strong>
-          <p class="meta-copy">This follows the simplified MVP authentication approach.</p>
+          <strong>パスワードなし</strong>
+          <p class="meta-copy">MVPとして認証方式を簡略化しています。</p>
         </li>
         <li>
-          <strong>Memory-only session</strong>
-          <p class="meta-copy">Refreshing the page clears the login state in this version.</p>
+          <strong>メモリ上のセッションのみ</strong>
+          <p class="meta-copy">このバージョンではページを再読み込みするとログイン状態は解除されます。</p>
         </li>
       </ul>
     </aside>

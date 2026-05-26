@@ -32,7 +32,7 @@ def create_owner(
         db_session.rollback()
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="login_id already exists",
+            detail="このログインIDは既に使用されています",
         ) from None
     db_session.refresh(owner)
     return owner
@@ -47,7 +47,7 @@ def list_owner_dogs(
     if owner is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="owner not found",
+            detail="飼い主が見つかりません",
         )
 
     dogs = [

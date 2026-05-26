@@ -33,7 +33,8 @@ services:
     volumes:
       - ./backend:/app
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
   db:
     image: postgres:16-alpine
@@ -43,6 +44,16 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-dog_health}
       POSTGRES_USER: ${POSTGRES_USER:-dog_health}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dog_health_password}
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -h localhost -p 5432 -U ${POSTGRES_USER:-dog_health} -d ${POSTGRES_DB:-dog_health}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
     volumes:
       - postgres_data:/var/lib/postgresql/data
 

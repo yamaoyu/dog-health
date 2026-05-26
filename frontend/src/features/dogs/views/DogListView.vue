@@ -14,7 +14,7 @@ const dogBirthday = ref('')
 const createErrorMessage = ref('')
 const isCreatingDog = ref(false)
 
-const dogCountLabel = computed(() => `${dogsResponse.value?.dogs.length ?? 0} dogs`)
+const dogCountLabel = computed(() => `${dogsResponse.value?.dogs.length ?? 0}匹`)
 
 async function loadDogs(): Promise<void> {
   if (!owner) {
@@ -28,7 +28,7 @@ async function loadDogs(): Promise<void> {
     dogsResponse.value = await fetchOwnerDogs(owner.owner_id)
   } catch (error) {
     dogsResponse.value = null
-    errorMessage.value = toErrorMessage(error, 'Failed to load dogs.')
+    errorMessage.value = toErrorMessage(error, '犬一覧の取得に失敗しました。')
   } finally {
     isLoading.value = false
   }
@@ -53,13 +53,13 @@ function validateDogForm(): string {
   const normalizedDogName = dogName.value.trim()
 
   if (!normalizedDogName) {
-    return 'Dog name is required.'
+    return '犬の名前は必須です。'
   }
   if (normalizedDogName.length < 2 || normalizedDogName.length > 20) {
-    return 'Dog name must be between 2 and 20 characters.'
+    return '犬の名前は2文字以上20文字以下で入力してください。'
   }
   if (!dogBirthday.value) {
-    return 'Birthday is required.'
+    return '誕生日は必須です。'
   }
 
   return ''
@@ -89,7 +89,7 @@ async function submitDog(): Promise<void> {
     resetDogForm()
     await loadDogs()
   } catch (error) {
-    createErrorMessage.value = toErrorMessage(error, 'Failed to register dog.')
+    createErrorMessage.value = toErrorMessage(error, '犬の登録に失敗しました。')
   } finally {
     isCreatingDog.value = false
   }
@@ -114,48 +114,46 @@ onBeforeUnmount(() => {
 <template>
   <section class="dogs-page">
     <article class="panel strong">
-      <p class="eyebrow">Dog List</p>
-      <h2>{{ dogsResponse?.owner_name ?? owner?.name ?? 'Owner' }}'s dogs</h2>
-      <p class="lead">This screen loads the dogs linked to the logged-in owner.</p>
+      <p class="eyebrow">犬一覧</p>
+      <h2>{{ dogsResponse?.owner_name ?? owner?.name ?? '飼い主' }}さんの犬一覧</h2>
 
       <div class="stat-grid stat-card-spacious">
         <div class="stat-card">
-          <p class="hint">Login ID</p>
+          <p class="hint">ログインID</p>
           <p class="stat-value">{{ owner?.login_id ?? '-' }}</p>
         </div>
         <div class="stat-card">
-          <p class="hint">Current list</p>
-          <p class="stat-value">{{ isLoading ? 'Loading...' : dogCountLabel }}</p>
+          <p class="hint">現在の登録数</p>
+          <p class="stat-value">{{ isLoading ? '読み込み中...' : dogCountLabel }}</p>
         </div>
       </div>
 
       <p v-if="errorMessage" class="error-text">{{ errorMessage }}</p>
 
       <div v-else-if="isLoading" class="callout">
-        <p class="meta-copy">Loading dogs from the backend...</p>
+        <p class="meta-copy">バックエンドから犬一覧を読み込んでいます...</p>
       </div>
 
       <div v-else-if="(dogsResponse?.dogs.length ?? 0) === 0" class="callout">
-        <h3>0 dogs yet</h3>
+        <h3>まだ犬は登録されていません</h3>
         <p class="empty-copy">
-          No dogs are linked to this owner yet. Use the register dog button at the bottom right to
-          add the first one.
+          この飼い主にはまだ犬が紐づいていません。右下の犬を登録ボタンから最初の1匹を追加してください。
         </p>
       </div>
 
       <ul v-else class="dog-list">
         <li v-for="dog in dogsResponse?.dogs" :key="dog.dog_id">
           <div class="dog-list-title">{{ dog.name }}</div>
-          <p class="meta-copy">Birthday: {{ dog.birthday }}</p>
+          <p class="meta-copy">誕生日: {{ dog.birthday }}</p>
         </li>
       </ul>
 
       <div class="actions actions-spacious">
         <button class="primary-button" type="button" @click="openDogModal">
-          Register dog
+          犬を登録
         </button>
         <button class="ghost-button" type="button" @click="loadDogs" :disabled="isLoading">
-          {{ isLoading ? 'Refreshing...' : 'Refresh list' }}
+          {{ isLoading ? '更新中...' : '一覧を更新' }}
         </button>
       </div>
     </article>
@@ -164,23 +162,23 @@ onBeforeUnmount(() => {
       <section class="modal-card">
         <div class="modal-header">
           <div>
-            <p class="eyebrow">Dog Registration</p>
-            <h3>Add a dog for {{ owner?.name ?? 'this owner' }}</h3>
+            <p class="eyebrow">犬の登録</p>
+            <h3>{{ owner?.name ?? 'この飼い主' }}の犬を追加</h3>
           </div>
           <button class="ghost-button modal-close-button" type="button" @click="closeDogModal">
-            Close
+            閉じる
           </button>
         </div>
 
         <form class="form" @submit.prevent="submitDog">
           <div class="field">
-            <label for="dog-name">Dog name</label>
+            <label for="dog-name">犬の名前</label>
             <input id="dog-name" v-model="dogName" maxlength="20" />
-            <p class="hint">Required. Use 2-20 characters.</p>
+            <p class="hint">必須です。2文字以上20文字以下で入力してください。</p>
           </div>
 
           <div class="field field-spacious">
-            <label for="dog-birthday">Birthday</label>
+            <label for="dog-birthday">誕生日</label>
             <input id="dog-birthday" v-model="dogBirthday" type="date" />
           </div>
 
@@ -188,10 +186,10 @@ onBeforeUnmount(() => {
 
           <div class="actions">
             <button class="primary-button" type="submit" :disabled="isCreatingDog">
-              {{ isCreatingDog ? 'Registering...' : 'Register dog' }}
+              {{ isCreatingDog ? '登録中...' : '犬を登録' }}
             </button>
             <button class="ghost-button" type="button" :disabled="isCreatingDog" @click="closeDogModal">
-              Cancel
+              キャンセル
             </button>
           </div>
         </form>

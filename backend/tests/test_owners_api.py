@@ -74,10 +74,24 @@ def test_create_owner_rejects_blank_name() -> None:
     assert response.status_code == 422
 
 
+def test_create_owner_rejects_non_string_name() -> None:
+    response = client.post("/owners", json={"name": None, "login_id": "hanako"})
+
+    assert response.status_code == 422
+    assert response.json()["detail"][0]["msg"] == "Value error, 名前は文字列で入力してください"
+
+
 def test_create_owner_rejects_blank_login_id() -> None:
     response = client.post("/owners", json={"name": "Hanako", "login_id": "   "})
 
     assert response.status_code == 422
+
+
+def test_create_owner_rejects_non_string_login_id() -> None:
+    response = client.post("/owners", json={"name": "Hanako", "login_id": None})
+
+    assert response.status_code == 422
+    assert response.json()["detail"][0]["msg"] == "Value error, ログインIDは文字列で入力してください"
 
 
 def test_create_owner_returns_conflict_when_login_id_exists() -> None:
@@ -90,7 +104,7 @@ def test_create_owner_returns_conflict_when_login_id_exists() -> None:
     app.dependency_overrides.clear()
 
     assert response.status_code == 409
-    assert response.json() == {"detail": "login_id already exists"}
+    assert response.json() == {"detail": "このログインIDは既に使用されています"}
     assert fake_session.rolled_back is True
 
 
@@ -131,4 +145,4 @@ def test_list_owner_dogs_returns_not_found_when_owner_missing() -> None:
     app.dependency_overrides.clear()
 
     assert response.status_code == 404
-    assert response.json() == {"detail": "owner not found"}
+    assert response.json() == {"detail": "飼い主が見つかりません"}

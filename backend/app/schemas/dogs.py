@@ -14,6 +14,9 @@ class DogCreateRequest(BaseModel):
     @field_validator("name", mode="before")
     @classmethod
     def validate_name(cls, value: str) -> str:
+        if not isinstance(value, str):
+            raise ValueError("名前は文字列で入力してください")
+
         normalized_value = value.strip()
         if not normalized_value:
             raise ValueError("名前は必須です")

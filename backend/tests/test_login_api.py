@@ -40,7 +40,7 @@ def test_login_returns_owner() -> None:
     fake_session.owners_by_login_id[owner.login_id] = owner
     app.dependency_overrides[get_login_db_session] = lambda: fake_session
 
-    response = client.post("/login", json={"login_id": "  hanako  "})
+    response = client.post("/sessions", json={"login_id": "  hanako  "})
 
     app.dependency_overrides.clear()
 
@@ -53,7 +53,7 @@ def test_login_returns_owner() -> None:
 
 
 def test_login_rejects_blank_login_id() -> None:
-    response = client.post("/login", json={"login_id": "   "})
+    response = client.post("/sessions", json={"login_id": "   "})
 
     assert response.status_code == 422
 
@@ -62,9 +62,9 @@ def test_login_returns_not_found_for_unknown_login_id() -> None:
     fake_session = FakeSession()
     app.dependency_overrides[get_login_db_session] = lambda: fake_session
 
-    response = client.post("/login", json={"login_id": "unknown"})
+    response = client.post("/sessions", json={"login_id": "unknown"})
 
     app.dependency_overrides.clear()
 
     assert response.status_code == 404
-    assert response.json() == {"detail": "owner not found"}
+    assert response.json() == {"detail": "ログインIDに一致する飼い主が見つかりません"}
