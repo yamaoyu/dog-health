@@ -78,3 +78,82 @@
 * avoid hardcoded configuration values
 * use environment variables for ports, URLs, and secrets
 * prefer explicit configuration management
+
+## General Principles
+
+* Keep implementation simple
+* Prefer readability over abstraction
+* MVP first
+* Avoid premature optimization
+
+---
+
+## Backend Conventions
+
+### API Naming
+
+Use plural resource names.
+
+Examples:
+
+* /owners
+* /dogs
+* /owner-dogs
+
+Avoid verb-based endpoints.
+
+Bad:
+
+* /createDog
+* /getDogs
+
+---
+
+### HTTP Methods
+
+* GET: fetch
+* POST: create
+* PUT: update
+* DELETE: delete
+
+---
+
+### Database Naming
+
+* table names use snake_case plural
+* primary keys use {table_singular}_id
+
+Examples:
+
+* dogs.dog_id
+* owners.owner_id
+
+---
+
+### SQLAlchemy
+
+* Use declarative models
+* Keep models simple
+* Avoid unnecessary repository layers
+
+---
+
+## Frontend Conventions
+
+* Use feature-based directory structure
+* Use Composition API
+* Keep API calls in dedicated service files
+
+---
+
+## Scope Control
+
+Do not implement:
+
+* authentication
+* analytics
+* notifications
+* admin features
+
+unless explicitly requested.
+

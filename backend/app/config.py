@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
+from urllib.parse import quote_plus
 
 
 @dataclass(frozen=True)
@@ -14,6 +15,14 @@ class Settings:
     db_name: str
     db_user: str
     db_password: str
+
+    @property
+    def sqlalchemy_database_url(self) -> str:
+        encoded_password = quote_plus(self.db_password)
+        return (
+            f"postgresql+psycopg://{self.db_user}:{encoded_password}"
+            f"@{self.db_host}:{self.db_port}/{self.db_name}"
+        )
 
 
 def get_settings() -> Settings:

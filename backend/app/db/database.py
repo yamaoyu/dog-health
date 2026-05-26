@@ -1,9 +1,14 @@
 from __future__ import annotations
 
+from collections.abc import Generator
+
 from pydantic import BaseModel
 from psycopg import OperationalError, connect
+from sqlalchemy import create_engine
+from sqlalchemy.engine import Engine
+from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
-from app.config import Settings
+from app.config import Settings, get_settings
 
 
 class DatabaseStatus(BaseModel):
@@ -12,6 +17,38 @@ class DatabaseStatus(BaseModel):
     port: int
     name: str
     user: str
+
+
+class Base(DeclarativeBase):
+    pass
+
+
+def create_engine_from_settings(settings: Settings) -> Engine:
+    return create_engine(
+        settings.sqlalchemy_database_url,
+        pool_pre_ping=True,
+    )
+
+
+def create_session_factory(engine: Engine) -> sessionmaker[Session]:
+    return sessionmaker(
+        bind=engine,
+        autoflush=False,
+        autocommit=False,
+    )
+
+
+settings = get_settings()
+engine = create_engine_from_settings(settings)
+session_factory = create_session_factory(engine)
+
+
+def get_db_session() -> Generator[Session, None, None]:
+    session = session_factory()
+    try:
+        yield session
+    finally:
+        session.close()
 
 
 def check_database_connection(settings: Settings) -> DatabaseStatus:

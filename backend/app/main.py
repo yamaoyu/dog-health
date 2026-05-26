@@ -2,17 +2,11 @@ from __future__ import annotations
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
 
 from app.config import get_settings
-from app.database import DatabaseStatus, check_database_connection
-
-
-class HealthResponse(BaseModel):
-    status: str
-    app: str
-    environment: str
-    database: DatabaseStatus
+from app.db.database import check_database_connection
+from app.routers import dogs_router, login_router, owners_router
+from app.schemas.health_check import HealthCheckResponse
 
 
 settings = get_settings()
@@ -27,12 +21,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(dogs_router)
+app.include_router(login_router)
+app.include_router(owners_router)
 
-@app.get("/health", response_model=HealthResponse)
-def read_health() -> HealthResponse:
+
+@app.get("/health", response_model=HealthCheckResponse)
+def read_health() -> HealthCheckResponse:
     database_status = check_database_connection(settings)
 
-    return HealthResponse(
+    return HealthCheckResponse(
         status="ok" if database_status.connected else "degraded",
         app=settings.app_name,
         environment=settings.app_env,

@@ -1,0 +1,384 @@
+:root {
+  --bg: #f6efe4;
+  --bg-deep: #eadbc7;
+  --surface: rgba(255, 251, 245, 0.92);
+  --surface-strong: #fffdf8;
+  --border: rgba(83, 58, 33, 0.14);
+  --text: #2f251d;
+  --muted: #6f6258;
+  --accent: #c2613f;
+  --accent-strong: #9e4327;
+  --accent-soft: rgba(194, 97, 63, 0.09);
+  --ok: #2f7d5a;
+  --danger: #b44a3d;
+  --shadow: 0 28px 80px rgba(111, 82, 45, 0.14);
+  --sans: 'Avenir Next', 'Segoe UI', sans-serif;
+  --mono: 'SFMono-Regular', Consolas, monospace;
+  color: var(--text);
+  background:
+    radial-gradient(circle at top left, rgba(238, 175, 124, 0.34), transparent 28%),
+    radial-gradient(circle at bottom right, rgba(232, 193, 142, 0.24), transparent 26%),
+    linear-gradient(180deg, #fcf7f0 0%, var(--bg) 100%);
+  font: 16px/1.5 var(--sans);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  color: var(--text);
+}
+
+button,
+input,
+code {
+  font: inherit;
+}
+
+button {
+  border: 0;
+}
+
+code {
+  font-family: var(--mono);
+  background: rgba(49, 38, 30, 0.06);
+  border-radius: 999px;
+  padding: 0.18rem 0.55rem;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+#app {
+  min-height: 100vh;
+}
+
+.app-shell {
+  width: min(1120px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 24px 0 56px;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  padding: 18px 24px;
+  border: 1px solid rgba(83, 58, 33, 0.1);
+  border-radius: 24px;
+  background: linear-gradient(135deg, rgba(255, 253, 248, 0.94), rgba(255, 243, 226, 0.9));
+  box-shadow: var(--shadow);
+}
+
+.brand-title {
+  color: var(--accent-strong);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin-top: 0;
+}
+
+h2 {
+  margin-bottom: 12px;
+  font-size: 1.5rem;
+}
+
+.topbar-nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav-link,
+.ghost-button,
+.primary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0.8rem 1.1rem;
+  cursor: pointer;
+  transition: transform 0.18s ease, background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+}
+
+.nav-link,
+.ghost-button {
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.nav-link.active {
+  border-color: rgba(194, 97, 63, 0.28);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.ghost-button:hover,
+.nav-link:hover,
+.primary-button:hover:enabled {
+  transform: translateY(-1px);
+}
+
+.primary-button {
+  background: var(--accent);
+  color: #fffdf8;
+}
+
+.primary-button:hover:enabled {
+  background: var(--accent-strong);
+}
+
+.primary-button:disabled,
+.ghost-button:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+.owner-chip {
+  border-radius: 999px;
+  padding: 0.45rem 0.82rem;
+  background: rgba(47, 125, 90, 0.12);
+  color: var(--ok);
+  font-weight: 700;
+}
+
+.page-frame {
+  margin-top: 20px;
+}
+
+.dogs-page {
+  position: relative;
+}
+
+.page-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
+  gap: 20px;
+}
+
+.panel {
+  padding: 28px;
+  border: 1px solid var(--border);
+  border-radius: 26px;
+  background: var(--surface);
+  backdrop-filter: blur(14px);
+  box-shadow: var(--shadow);
+}
+
+.panel.strong {
+  background: var(--surface-strong);
+}
+
+.lead,
+.muted,
+.hint,
+.error-text,
+.empty-copy,
+.meta-copy {
+  color: var(--muted);
+}
+
+.lead {
+  font-size: 1.02rem;
+}
+
+.form {
+  display: grid;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+}
+
+.field-spacious {
+  margin-bottom: 10px;
+}
+
+.field label {
+  font-size: 0.94rem;
+  font-weight: 700;
+}
+
+.field input {
+  width: 100%;
+  padding: 0.95rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--text);
+}
+
+.field input:focus {
+  outline: 2px solid rgba(194, 97, 63, 0.18);
+  border-color: rgba(194, 97, 63, 0.38);
+}
+
+.hint,
+.error-text,
+.success-text {
+  margin: 0;
+  font-size: 0.94rem;
+}
+
+.error-text {
+  color: var(--danger);
+}
+
+.success-text {
+  color: var(--ok);
+}
+
+.stack {
+  display: grid;
+  gap: 16px;
+}
+
+.callout {
+  padding: 18px 20px;
+  border-radius: 20px;
+  background: var(--accent-soft);
+}
+
+.meta-list,
+.dog-list {
+  display: grid;
+  gap: 14px;
+  padding: 0;
+  margin: 18px 0 0;
+  list-style: none;
+}
+
+.meta-list li,
+.dog-list li {
+  padding: 16px 18px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.56);
+}
+
+.dog-list-title,
+.stat-value {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 20px;
+}
+
+.stat-card {
+  padding: 16px 18px;
+  border-radius: 20px;
+  background: rgba(194, 97, 63, 0.08);
+}
+
+.stat-card-spacious {
+  margin-bottom: 10px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.actions-spacious {
+  margin-top: 10px;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(47, 37, 29, 0.34);
+  backdrop-filter: blur(8px);
+}
+
+.modal-card {
+  width: min(520px, 100%);
+  padding: 28px;
+  border: 1px solid rgba(83, 58, 33, 0.12);
+  border-radius: 28px;
+  background: rgba(255, 252, 248, 0.96);
+  box-shadow: var(--shadow);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.modal-close-button {
+  padding: 0.7rem 1rem;
+}
+
+@media (max-width: 800px) {
+  .app-shell {
+    width: min(100% - 20px, 1120px);
+    padding: 16px 0 36px;
+  }
+
+  .topbar,
+  .panel {
+    padding: 22px;
+  }
+
+  .page-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .topbar {
+    padding: 16px 18px;
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .topbar-nav {
+    justify-content: flex-start;
+  }
+
+  .stat-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-card {
+    padding: 22px;
+  }
+
+  .modal-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
