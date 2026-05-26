@@ -2,29 +2,28 @@ from __future__ import annotations
 
 from datetime import date
 from uuid import UUID
-
+from app.schemas.common_params import LOGINID_MIN_LENGTH, LOGINID_MAX_LENGTH, OWNERNAME_MIN_LENGTH, OWNERNAME_MAX_LENGTH
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class OwnerCreateRequest(BaseModel):
-    name: str = Field(min_length=1, max_length=20)
-    login_id: str = Field(min_length=4, max_length=20)
+    name: str = Field(min_length=OWNERNAME_MIN_LENGTH, max_length=OWNERNAME_MAX_LENGTH)
+    login_id: str = Field(min_length=LOGINID_MIN_LENGTH, max_length=LOGINID_MAX_LENGTH)
 
-    @field_validator("name")
+    @field_validator("name", mode="before")
     @classmethod
     def validate_name(cls, value: str) -> str:
         normalized_value = value.strip()
         if not normalized_value:
-            raise ValueError("name must not be blank")
-
+            raise ValueError("名前は必須です")
         return normalized_value
 
-    @field_validator("login_id")
+    @field_validator("login_id", mode="before")
     @classmethod
     def validate_login_id(cls, value: str) -> str:
         normalized_value = value.strip()
         if not normalized_value:
-            raise ValueError("login_id must not be blank")
+            raise ValueError("login_idは必須です")
 
         return normalized_value
 

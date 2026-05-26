@@ -6,18 +6,16 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.config import get_settings
 from app.db.database import get_db_session
 from app.models.entities import Dog, Owner, OwnerDog
 from app.schemas.dogs import DogCreateRequest, DogCreateResponse, DogOwnerSummary, DogOwnersResponse
 
 
 router = APIRouter(prefix="/dogs", tags=["dogs"])
-settings = get_settings()
 
 
 def get_dog_db_session() -> Generator[Session, None, None]:
-    yield from get_db_session(settings)
+    yield from get_db_session()
 
 
 @router.post("", response_model=DogCreateResponse, status_code=status.HTTP_201_CREATED)

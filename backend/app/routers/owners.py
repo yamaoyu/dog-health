@@ -7,18 +7,16 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.config import get_settings
 from app.db.database import get_db_session
 from app.models.entities import Owner
 from app.schemas.owners import OwnerCreateRequest, OwnerDogSummary, OwnerDogsResponse, OwnerResponse
 
 
 router = APIRouter(prefix="/owners", tags=["owners"])
-settings = get_settings()
 
 
 def get_owner_db_session() -> Generator[Session, None, None]:
-    yield from get_db_session(settings)
+    yield from get_db_session()
 
 
 @router.post("", response_model=OwnerResponse, status_code=status.HTTP_201_CREATED)

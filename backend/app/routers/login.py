@@ -6,18 +6,16 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.config import get_settings
 from app.db.database import get_db_session
 from app.models.entities import Owner
 from app.schemas.login import LoginRequest, LoginResponse
 
 
 router = APIRouter(tags=["login"])
-settings = get_settings()
 
 
 def get_login_db_session() -> Generator[Session, None, None]:
-    yield from get_db_session(settings)
+    yield from get_db_session()
 
 
 @router.post("/login", response_model=LoginResponse)

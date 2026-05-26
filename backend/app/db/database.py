@@ -5,9 +5,10 @@ from collections.abc import Generator
 from pydantic import BaseModel
 from psycopg import OperationalError, connect
 from sqlalchemy import create_engine
+from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
-from app.config import Settings
+from app.config import Settings, get_settings
 
 
 class DatabaseStatus(BaseModel):
@@ -22,23 +23,27 @@ class Base(DeclarativeBase):
     pass
 
 
-def create_engine_from_settings(settings: Settings):
+def create_engine_from_settings(settings: Settings) -> Engine:
     return create_engine(
         settings.sqlalchemy_database_url,
         pool_pre_ping=True,
     )
 
 
-def create_session_factory(settings: Settings) -> sessionmaker[Session]:
+def create_session_factory(engine: Engine) -> sessionmaker[Session]:
     return sessionmaker(
-        bind=create_engine_from_settings(settings),
+        bind=engine,
         autoflush=False,
         autocommit=False,
     )
 
 
-def get_db_session(settings: Settings) -> Generator[Session, None, None]:
-    session_factory = create_session_factory(settings)
+settings = get_settings()
+engine = create_engine_from_settings(settings)
+session_factory = create_session_factory(engine)
+
+
+def get_db_session() -> Generator[Session, None, None]:
     session = session_factory()
     try:
         yield session

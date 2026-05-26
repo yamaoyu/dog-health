@@ -11,9 +11,7 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.add_column("owners", sa.Column("login_id", sa.Text(), nullable=True))
-    op.execute("UPDATE owners SET login_id = owner_id::text WHERE login_id IS NULL")
-    op.alter_column("owners", "login_id", nullable=False)
+    op.add_column("owners", sa.Column("login_id", sa.Text(), nullable=False))
     op.create_unique_constraint("uq_owners_login_id", "owners", ["login_id"])
 
 
