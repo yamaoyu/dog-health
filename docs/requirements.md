@@ -71,14 +71,13 @@ Event types are initially fixed for simplicity.
 
 ## Goal
 
-Create a minimal but functional dog health tracking application.
+setup CI/CD environment
 
 ## Included
 
-* owner management　(create and get)
-* dog management (create and get)
-* owner-dog relationship
-* register owner and dog page
+* frontend tests must run automatically
+* pull requests must execute CI checks
+* failing tests must block merge
 
 ## Not Included
 
