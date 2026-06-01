@@ -71,13 +71,14 @@ Event types are initially fixed for simplicity.
 
 ## Goal
 
-setup CI/CD environment
+Dog owners can manage dogs and record health-related events.
 
 ## Included
 
-* frontend tests must run automatically
-* pull requests must execute CI checks
-* failing tests must block merge
+- owner management
+- dog management
+- owner-dog relationship
+- register owner and dog page
 
 ## Not Included
 
