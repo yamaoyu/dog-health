@@ -157,3 +157,15 @@ Do not implement:
 
 unless explicitly requested.
 
+## Frontend Testing
+
+* Use Vitest for frontend tests.
+* Write integration-style tests for views when testing user interactions.
+* Place view tests under each feature's `views` directory.
+  * Example: `frontend/src/features/auth/views/LoginView.spec.ts`
+* Prefer Testing Library queries in this order:
+  1. `getByRole`
+  2. `getByLabelText`
+  3. `getByText`
+* Use `data-testid` only when the element cannot reasonably be selected by accessible role, label, or text.
+* Test behavior from the user's perspective, such as clicking buttons and verifying API calls.

@@ -14,6 +14,8 @@ dist-ssr
 
 .pytest_cache
 __pycache__
+.venv
+.uv-cache
 
 .history
 

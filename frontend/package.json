@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
+    "type-check": "vue-tsc -b",
+    "test": "vitest run",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -13,11 +15,15 @@
     "vue-router": "^4.6.3"
   },
   "devDependencies": {
+    "@testing-library/user-event": "^14.6.1",
+    "@testing-library/vue": "^8.1.0",
     "@types/node": "^24.12.3",
     "@vitejs/plugin-vue": "^6.0.6",
     "@vue/tsconfig": "^0.9.1",
+    "jsdom": "^27.4.0",
     "typescript": "~6.0.2",
     "vite": "^8.0.12",
+    "vitest": "^4.1.7",
     "vue-tsc": "^3.2.8"
   }
 }

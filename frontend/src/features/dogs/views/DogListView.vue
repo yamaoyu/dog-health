@@ -159,7 +159,7 @@ onBeforeUnmount(() => {
     </article>
 
     <div v-if="isModalOpen" class="modal-backdrop" @click.self="closeDogModal">
-      <section class="modal-card">
+      <section class="modal-card" role="dialog">
         <div class="modal-header">
           <div>
             <p class="eyebrow">犬の登録</p>

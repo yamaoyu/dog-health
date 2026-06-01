@@ -71,14 +71,14 @@ Event types are initially fixed for simplicity.
 
 ## Goal
 
-Create a minimal but functional dog health tracking application.
+Dog owners can manage dogs and record health-related events.
 
 ## Included
 
-* owner management　(create and get)
-* dog management (create and get)
-* owner-dog relationship
-* register owner and dog page
+- owner management
+- dog management
+- owner-dog relationship
+- register owner and dog page
 
 ## Not Included
 
