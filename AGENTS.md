@@ -113,7 +113,8 @@ Bad:
 
 * GET: fetch
 * POST: create
-* PUT: update
+* PUT: update (full update)
+* PATCH: partial update
 * DELETE: delete
 
 ---

@@ -9,7 +9,13 @@ from sqlalchemy.orm import Session
 
 from app.db.database import get_db_session
 from app.models.entities import Owner
-from app.schemas.owners import OwnerCreateRequest, OwnerDogSummary, OwnerDogsResponse, OwnerResponse
+from app.schemas.owners import (
+    OwnerCreateRequest,
+    OwnerDogSummary,
+    OwnerDogsResponse,
+    OwnerResponse,
+    OwnerUpdateRequest,
+)
 
 
 router = APIRouter(prefix="/owners", tags=["owners"])
@@ -26,6 +32,37 @@ def create_owner(
 ) -> Owner:
     owner = Owner(name=payload.name, login_id=payload.login_id)
     db_session.add(owner)
+    try:
+        db_session.commit()
+    except IntegrityError:
+        db_session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="このログインIDは既に使用されています",
+        ) from None
+    db_session.refresh(owner)
+    return owner
+
+
+@router.patch("/{owner_id}", response_model=OwnerResponse)
+def update_owner(
+    owner_id: UUID,
+    payload: OwnerUpdateRequest,
+    db_session: Session = Depends(get_owner_db_session),
+) -> Owner:
+    owner = db_session.get(Owner, owner_id)
+    if owner is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="飼い主が見つかりません",
+        )
+
+    if payload.name is not None:
+        owner.name = payload.name
+
+    if payload.login_id is not None:
+        owner.login_id = payload.login_id
+
     try:
         db_session.commit()
     except IntegrityError:
