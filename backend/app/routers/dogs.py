@@ -8,7 +8,14 @@ from sqlalchemy.orm import Session
 
 from app.db.database import get_db_session
 from app.models.entities import Dog, Owner, OwnerDog
-from app.schemas.dogs import DogCreateRequest, DogCreateResponse, DogOwnerSummary, DogOwnersResponse
+from app.schemas.dogs import (
+    DogCreateRequest,
+    DogCreateResponse,
+    DogOwnerSummary,
+    DogOwnersResponse,
+    DogResponse,
+    DogUpdateRequest,
+)
 
 
 router = APIRouter(prefix="/dogs", tags=["dogs"])
@@ -30,7 +37,7 @@ def create_dog(
             detail="飼い主が見つかりません",
         )
 
-    dog = Dog(name=payload.name, birthday=payload.birthday)
+    dog = Dog(name=payload.name, birthday=payload.birthday, gender=payload.gender)
     db_session.add(dog)
     db_session.flush()
 
@@ -47,7 +54,35 @@ def create_dog(
         owner_id=owner.owner_id,
         name=dog.name,
         birthday=dog.birthday,
+        gender=dog.gender,
     )
+
+
+@router.patch("/{dog_id}", response_model=DogResponse)
+def update_dog(
+    dog_id: UUID,
+    payload: DogUpdateRequest,
+    db_session: Session = Depends(get_dog_db_session),
+) -> Dog:
+    dog = db_session.get(Dog, dog_id)
+    if dog is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="犬が見つかりません",
+        )
+
+    if "name" in payload.model_fields_set:
+        dog.name = payload.name
+
+    if "birthday" in payload.model_fields_set:
+        dog.birthday = payload.birthday
+
+    if "gender" in payload.model_fields_set:
+        dog.gender = payload.gender
+
+    db_session.commit()
+    db_session.refresh(dog)
+    return dog
 
 
 @router.get("/{dog_id}/owners", response_model=DogOwnersResponse)
@@ -75,5 +110,6 @@ def list_dog_owners(
         dog_id=dog.dog_id,
         dog_name=dog.name,
         birthday=dog.birthday,
+        gender=dog.gender,
         owners=owners,
     )

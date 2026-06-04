@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from datetime import date
 
-from sqlalchemy import Date, ForeignKey, String, Text, UniqueConstraint, text
+from sqlalchemy import CheckConstraint, Date, ForeignKey, String, Text, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -26,6 +26,12 @@ class Owner(Base):
 
 class Dog(Base):
     __tablename__ = "dogs"
+    __table_args__ = (
+        CheckConstraint(
+            "gender IN ('male', 'female', 'unknown')",
+            name="ck_dogs_gender",
+        ),
+    )
 
     dog_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
@@ -33,7 +39,8 @@ class Dog(Base):
         server_default=text("gen_random_uuid()"),
     )
     name: Mapped[str] = mapped_column(Text, nullable=False)
-    birthday: Mapped[date] = mapped_column(Date, nullable=False)
+    birthday: Mapped[date | None] = mapped_column(Date, nullable=True)
+    gender: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     owners: Mapped[list["OwnerDog"]] = relationship(back_populates="dog")
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from sqlalchemy import UniqueConstraint
+from sqlalchemy import CheckConstraint, UniqueConstraint
 
 from app.models import Dog, Owner, OwnerDog
 
@@ -17,11 +17,19 @@ def test_owner_model_matches_schema() -> None:
 
 def test_dog_model_matches_schema() -> None:
     table = Dog.__table__
+    check_constraints = [
+        constraint
+        for constraint in table.constraints
+        if isinstance(constraint, CheckConstraint)
+    ]
 
     assert table.name == "dogs"
     assert table.c.dog_id.primary_key is True
     assert table.c.name.nullable is False
-    assert table.c.birthday.nullable is False
+    assert table.c.birthday.nullable is True
+    assert table.c.gender.nullable is True
+    assert len(check_constraints) == 1
+    assert check_constraints[0].name == "ck_dogs_gender"
 
 
 def test_owner_dog_model_matches_schema() -> None:

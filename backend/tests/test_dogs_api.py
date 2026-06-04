@@ -68,6 +68,7 @@ def test_create_dog_creates_dog_and_owner_link() -> None:
             "owner_id": str(owner_id),
             "name": "  Pochi  ",
             "birthday": "2020-01-01",
+            "gender": "male",
         },
     )
 
@@ -81,6 +82,7 @@ def test_create_dog_creates_dog_and_owner_link() -> None:
     assert len(fake_session.owner_dogs) == 1
     assert fake_session.dogs[0].name == "Pochi"
     assert fake_session.dogs[0].birthday == date(2020, 1, 1)
+    assert fake_session.dogs[0].gender == "male"
     assert fake_session.owner_dogs[0].owner_id == owner_id
     assert fake_session.owner_dogs[0].dog_id == fake_session.dogs[0].dog_id
     assert fake_session.owner_dogs[0].role is None
@@ -89,7 +91,48 @@ def test_create_dog_creates_dog_and_owner_link() -> None:
         "owner_id": str(owner_id),
         "name": "Pochi",
         "birthday": "2020-01-01",
+        "gender": "male",
     }
+
+
+def test_create_dog_allows_nullable_birthday_and_gender() -> None:
+    fake_session = FakeSession()
+    owner_id = UUID("00000000-0000-0000-0000-000000000001")
+    fake_session.owners[owner_id] = Owner(owner_id=owner_id, name="Hanako", login_id="hanako")
+    app.dependency_overrides[get_dog_db_session] = lambda: fake_session
+
+    response = client.post(
+        "/dogs",
+        json={
+            "owner_id": str(owner_id),
+            "name": "Pochi",
+            "birthday": None,
+            "gender": None,
+        },
+    )
+
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 201
+    assert fake_session.dogs[0].name == "Pochi"
+    assert fake_session.dogs[0].birthday is None
+    assert fake_session.dogs[0].gender is None
+    assert response.json()["birthday"] is None
+    assert response.json()["gender"] is None
+
+
+def test_create_dog_rejects_invalid_gender() -> None:
+    response = client.post(
+        "/dogs",
+        json={
+            "owner_id": "00000000-0000-0000-0000-000000000001",
+            "name": "Pochi",
+            "birthday": "2020-01-01",
+            "gender": "other",
+        },
+    )
+
+    assert response.status_code == 422
 
 
 def test_create_dog_rejects_blank_name() -> None:
@@ -127,12 +170,127 @@ def test_create_dog_returns_not_found_when_owner_missing() -> None:
     assert fake_session.owner_dogs == []
 
 
+def test_update_dog_updates_name_birthday_and_gender() -> None:
+    fake_session = FakeSession()
+    dog_id = UUID("00000000-0000-0000-0000-000000000010")
+    dog = Dog(dog_id=dog_id, name="Pochi", birthday=date(2020, 1, 1), gender="male")
+    fake_session.dog_by_id[dog_id] = dog
+    app.dependency_overrides[get_dog_db_session] = lambda: fake_session
+
+    response = client.patch(
+        f"/dogs/{dog_id}",
+        json={
+            "name": "  Hachi  ",
+            "birthday": "2021-02-03",
+            "gender": "female",
+        },
+    )
+
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    assert fake_session.committed is True
+    assert fake_session.refreshed is True
+    assert dog.name == "Hachi"
+    assert dog.birthday == date(2021, 2, 3)
+    assert dog.gender == "female"
+    assert response.json() == {
+        "dog_id": str(dog_id),
+        "name": "Hachi",
+        "birthday": "2021-02-03",
+        "gender": "female",
+    }
+
+
+def test_update_dog_allows_clearing_birthday_and_gender() -> None:
+    fake_session = FakeSession()
+    dog_id = UUID("00000000-0000-0000-0000-000000000010")
+    dog = Dog(dog_id=dog_id, name="Pochi", birthday=date(2020, 1, 1), gender="male")
+    fake_session.dog_by_id[dog_id] = dog
+    app.dependency_overrides[get_dog_db_session] = lambda: fake_session
+
+    response = client.patch(
+        f"/dogs/{dog_id}",
+        json={
+            "birthday": None,
+            "gender": None,
+        },
+    )
+
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    assert dog.name == "Pochi"
+    assert dog.birthday is None
+    assert dog.gender is None
+    assert response.json() == {
+        "dog_id": str(dog_id),
+        "name": "Pochi",
+        "birthday": None,
+        "gender": None,
+    }
+
+
+def test_update_dog_returns_not_found_when_dog_missing() -> None:
+    fake_session = FakeSession()
+    app.dependency_overrides[get_dog_db_session] = lambda: fake_session
+
+    response = client.patch(
+        "/dogs/00000000-0000-0000-0000-000000000099",
+        json={"name": "Hachi"},
+    )
+
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 404
+    assert response.json() == {"detail": "犬が見つかりません"}
+    assert fake_session.committed is False
+
+
+def test_update_dog_rejects_blank_name() -> None:
+    response = client.patch(
+        "/dogs/00000000-0000-0000-0000-000000000010",
+        json={"name": "   "},
+    )
+
+    assert response.status_code == 422
+
+
+def test_update_dog_rejects_null_name() -> None:
+    response = client.patch(
+        "/dogs/00000000-0000-0000-0000-000000000010",
+        json={"name": None},
+    )
+
+    assert response.status_code == 422
+    assert response.json()["detail"][0]["msg"] == "Value error, 名前は文字列で入力してください"
+
+
+def test_update_dog_rejects_invalid_gender() -> None:
+    response = client.patch(
+        "/dogs/00000000-0000-0000-0000-000000000010",
+        json={"gender": "other"},
+    )
+
+    assert response.status_code == 422
+
+
+def test_update_dog_rejects_empty_request_body() -> None:
+    response = client.patch(
+        "/dogs/00000000-0000-0000-0000-000000000010",
+        json={},
+    )
+
+    assert response.status_code == 422
+    assert response.json()["detail"][0]["msg"] == "Value error, 更新する項目を指定してください"
+
+
 def test_list_dog_owners_returns_related_owners() -> None:
     fake_session = FakeSession()
     owner_id = UUID("00000000-0000-0000-0000-000000000001")
     dog_id = UUID("00000000-0000-0000-0000-000000000010")
     owner = Owner(owner_id=owner_id, name="Hanako", login_id="hanako")
-    dog = Dog(dog_id=dog_id, name="Pochi", birthday=date(2020, 1, 1))
+    dog = Dog(dog_id=dog_id, name="Pochi", birthday=date(2020, 1, 1), gender="female")
     dog.owners = [OwnerDog(owner_dog_id=uuid4(), owner=owner, dog=dog, role="primary")]
     fake_session.dog_by_id[dog_id] = dog
     app.dependency_overrides[get_dog_db_session] = lambda: fake_session
@@ -146,6 +304,7 @@ def test_list_dog_owners_returns_related_owners() -> None:
         "dog_id": str(dog_id),
         "dog_name": "Pochi",
         "birthday": "2020-01-01",
+        "gender": "female",
         "owners": [
             {
                 "owner_id": str(owner_id),

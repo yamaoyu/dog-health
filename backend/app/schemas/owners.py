@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import date
+from typing import Literal
 from uuid import UUID
 
 from app.schemas.common_params import (
@@ -10,6 +11,8 @@ from app.schemas.common_params import (
     OWNERNAME_MIN_LENGTH,
 )
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+
+DogGender = Literal["male", "female", "unknown"]
 
 
 class OwnerCreateRequest(BaseModel):
@@ -93,7 +96,8 @@ class OwnerResponse(BaseModel):
 class OwnerDogSummary(BaseModel):
     dog_id: UUID
     name: str
-    birthday: date
+    birthday: date | None
+    gender: DogGender | None
 
 
 class OwnerDogsResponse(BaseModel):

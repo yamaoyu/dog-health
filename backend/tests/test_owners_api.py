@@ -242,7 +242,7 @@ def test_list_owner_dogs_returns_related_dogs() -> None:
     owner_id = UUID("00000000-0000-0000-0000-000000000001")
     dog_id = UUID("00000000-0000-0000-0000-000000000010")
     owner = Owner(owner_id=owner_id, name="Hanako", login_id="hanako")
-    dog = Dog(dog_id=dog_id, name="Pochi", birthday=date(2020, 1, 1))
+    dog = Dog(dog_id=dog_id, name="Pochi", birthday=date(2020, 1, 1), gender="male")
     owner.dogs = [OwnerDog(owner_dog_id=uuid4(), owner=owner, dog=dog, role="primary")]
     fake_session.owners[owner_id] = owner
     app.dependency_overrides[get_owner_db_session] = lambda: fake_session
@@ -260,6 +260,7 @@ def test_list_owner_dogs_returns_related_dogs() -> None:
                 "dog_id": str(dog_id),
                 "name": "Pochi",
                 "birthday": "2020-01-01",
+                "gender": "male",
             }
         ],
     }
