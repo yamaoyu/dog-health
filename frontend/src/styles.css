@@ -38,6 +38,7 @@ body {
 
 button,
 input,
+select,
 code {
   font: inherit;
 }
@@ -273,7 +274,8 @@ h2 {
   font-weight: 700;
 }
 
-.field input {
+.field input,
+.field select {
   width: 100%;
   padding: 0.95rem 1rem;
   border: 1px solid var(--border);
@@ -282,7 +284,8 @@ h2 {
   color: var(--text);
 }
 
-.field input:focus {
+.field input:focus,
+.field select:focus {
   outline: 2px solid rgba(194, 97, 63, 0.18);
   border-color: rgba(194, 97, 63, 0.38);
 }
