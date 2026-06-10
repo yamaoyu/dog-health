@@ -18,6 +18,7 @@ const isLoading = ref(true)
 const isModalOpen = ref(false)
 const dogName = ref('')
 const dogBirthday = ref('')
+const dogGender = ref<DogGender | ''>('')
 const createErrorMessage = ref('')
 const isCreatingDog = ref(false)
 const selectedDog = ref<OwnerDog | null>(null)
@@ -61,6 +62,7 @@ function closeDogModal(): void {
 function resetDogForm(): void {
   dogName.value = ''
   dogBirthday.value = ''
+  dogGender.value = ''
 }
 
 function openDogUpdateModal(dog: OwnerDog): void {
@@ -88,9 +90,6 @@ function validateDogForm(): string {
   }
   if (normalizedDogName.length < 2 || normalizedDogName.length > 20) {
     return '犬の名前は2文字以上20文字以下で入力してください。'
-  }
-  if (!dogBirthday.value) {
-    return '誕生日は必須です。'
   }
 
   return ''
@@ -139,7 +138,8 @@ async function submitDog(): Promise<void> {
     await createDog({
       owner_id: owner.value.owner_id,
       name: dogName.value.trim(),
-      birthday: dogBirthday.value,
+      birthday: dogBirthday.value || null,
+      gender: dogGender.value || null,
     })
     closeDogModal()
     resetDogForm()
@@ -265,9 +265,6 @@ onBeforeUnmount(() => {
             <p class="eyebrow">犬の登録</p>
             <h3>{{ owner?.name ?? 'この飼い主' }}の犬を追加</h3>
           </div>
-          <button class="ghost-button modal-close-button" type="button" @click="closeDogModal">
-            閉じる
-          </button>
         </div>
 
         <form class="form" @submit.prevent="submitDog">
@@ -277,9 +274,19 @@ onBeforeUnmount(() => {
             <p class="hint">必須です。2文字以上20文字以下で入力してください。</p>
           </div>
 
-          <div class="field field-spacious">
+          <div class="field">
             <label for="dog-birthday">誕生日</label>
             <input id="dog-birthday" v-model="dogBirthday" type="date" />
+          </div>
+
+          <div class="field field-spacious">
+            <label for="dog-gender">性別</label>
+            <select id="dog-gender" v-model="dogGender">
+              <option value="">未登録</option>
+              <option value="male">おす</option>
+              <option value="female">めす</option>
+              <option value="unknown">不明</option>
+            </select>
           </div>
 
           <p v-if="createErrorMessage" class="error-text">{{ createErrorMessage }}</p>

@@ -134,7 +134,7 @@ describe('DogListView', () => {
             owner_id: 'owner-1',
             name: 'Pochi',
             birthday: '2020-01-01',
-            gender: null,
+            gender: 'female',
           }),
         )
       }
@@ -157,6 +157,7 @@ describe('DogListView', () => {
     const dialog = screen.getByRole('dialog')
     await user.type(within(dialog).getByLabelText('犬の名前'), 'Pochi')
     await user.type(within(dialog).getByLabelText('誕生日'), '2020-01-01')
+    await user.selectOptions(within(dialog).getByLabelText('性別'), 'female')
     await user.click(within(dialog).getByRole('button', { name: '犬を登録' }))
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3))
@@ -166,6 +167,56 @@ describe('DogListView', () => {
         owner_id: 'owner-1',
         name: 'Pochi',
         birthday: '2020-01-01',
+        gender: 'female',
+      }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+  })
+
+  it('犬登録フォームは誕生日と性別が未入力でも犬作成APIを呼ぶ', async () => {
+    setLoggedInOwner()
+    const fetchMock = vi.fn((url: string, init?: RequestInit) => {
+      if (url.endsWith('/dogs') && init?.method === 'POST') {
+        return Promise.resolve(
+          jsonResponse({
+            dog_id: 'dog-1',
+            owner_id: 'owner-1',
+            name: 'Pochi',
+            birthday: null,
+            gender: null,
+          }),
+        )
+      }
+
+      return Promise.resolve(
+        jsonResponse({
+          owner_id: 'owner-1',
+          owner_name: 'Hanako',
+          dogs: [],
+        }),
+      )
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const user = userEvent.setup()
+    render(DogListView)
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
+
+    await user.click(screen.getByRole('button', { name: '犬を登録' }))
+    const dialog = screen.getByRole('dialog')
+    await user.type(within(dialog).getByLabelText('犬の名前'), 'Pochi')
+    await user.click(within(dialog).getByRole('button', { name: '犬を登録' }))
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3))
+    expect(fetchMock).toHaveBeenNthCalledWith(2, 'http://localhost:8010/dogs', {
+      method: 'POST',
+      body: JSON.stringify({
+        owner_id: 'owner-1',
+        name: 'Pochi',
+        birthday: null,
+        gender: null,
       }),
       headers: {
         'Content-Type': 'application/json',
