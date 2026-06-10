@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { toErrorMessage } from '../../../lib/api'
-import { getCurrentOwner } from '../../auth/session'
+import { useCurrentOwner } from '../../auth/session'
 import {
   createDog,
   fetchOwnerDogs,
@@ -11,7 +11,7 @@ import {
   type OwnerDogsResponse,
 } from '../services/dogsApi'
 
-const owner = getCurrentOwner()
+const owner = useCurrentOwner()
 const dogsResponse = ref<OwnerDogsResponse | null>(null)
 const errorMessage = ref('')
 const isLoading = ref(true)
@@ -31,7 +31,7 @@ const dogCountLabel = computed(() => `${dogsResponse.value?.dogs.length ?? 0}匹
 const isUpdateModalOpen = computed(() => selectedDog.value !== null)
 
 async function loadDogs(): Promise<void> {
-  if (!owner) {
+  if (!owner.value) {
     return
   }
 
@@ -39,7 +39,7 @@ async function loadDogs(): Promise<void> {
   errorMessage.value = ''
 
   try {
-    dogsResponse.value = await fetchOwnerDogs(owner.owner_id)
+    dogsResponse.value = await fetchOwnerDogs(owner.value.owner_id)
   } catch (error) {
     dogsResponse.value = null
     errorMessage.value = toErrorMessage(error, '犬一覧の取得に失敗しました。')
@@ -122,7 +122,7 @@ function formatDogGender(gender: DogGender | null): string {
 }
 
 async function submitDog(): Promise<void> {
-  if (!owner) {
+  if (!owner.value) {
     return
   }
 
@@ -137,7 +137,7 @@ async function submitDog(): Promise<void> {
   isCreatingDog.value = true
   try {
     await createDog({
-      owner_id: owner.owner_id,
+      owner_id: owner.value.owner_id,
       name: dogName.value.trim(),
       birthday: dogBirthday.value,
     })
@@ -209,7 +209,7 @@ onBeforeUnmount(() => {
   <section class="dogs-page">
     <article class="panel strong">
       <p class="eyebrow">犬一覧</p>
-      <h2>{{ dogsResponse?.owner_name ?? owner?.name ?? '飼い主' }}さんの犬一覧</h2>
+      <h2>{{ owner?.name ?? dogsResponse?.owner_name ?? '飼い主' }}さんの犬一覧</h2>
 
       <div class="stat-grid stat-card-spacious">
         <div class="stat-card">

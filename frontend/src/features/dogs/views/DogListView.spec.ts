@@ -99,6 +99,31 @@ describe('DogListView', () => {
     })
   })
 
+  it('現在の飼い主が更新されると飼い主情報の表示を更新する', async () => {
+    setLoggedInOwner()
+    const fetchMock = vi.fn().mockResolvedValue(
+      jsonResponse({
+        owner_id: 'owner-1',
+        owner_name: 'Hanako',
+        dogs: [],
+      }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(DogListView)
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
+
+    setCurrentOwner({
+      owner_id: 'owner-1',
+      name: 'Taro',
+      login_id: 'taro',
+    })
+
+    expect(await screen.findByText('Taroさんの犬一覧')).toBeTruthy()
+    expect(screen.getByText('taro')).toBeTruthy()
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
   it('犬登録ボタンをクリックすると犬作成APIが呼ばれる', async () => {
     setLoggedInOwner()
     const fetchMock = vi.fn((url: string, init?: RequestInit) => {
