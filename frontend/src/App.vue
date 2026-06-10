@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
-import { clearCurrentOwner, useCurrentOwner } from './features/auth/session'
+import { clearCurrentOwner, setCurrentOwner, useCurrentOwner } from './features/auth/session'
+import UserMenu from './features/owners/components/UserMenu.vue'
+import type { Owner } from './features/owners/services/ownersApi'
 
 const currentOwner = useCurrentOwner()
 const route = useRoute()
@@ -14,6 +16,10 @@ async function logout(): Promise<void> {
   clearCurrentOwner()
   await router.push({ name: 'login' })
 }
+
+function updateCurrentOwner(owner: Owner): void {
+  setCurrentOwner(owner)
+}
 </script>
 
 <template>
@@ -23,9 +29,13 @@ async function logout(): Promise<void> {
 
       <nav class="topbar-nav">
         <template v-if="isLoggedIn">
-          <span class="owner-chip">{{ currentOwner?.name }}</span>
           <RouterLink class="nav-link" :class="{ active: isDogsRoute }" to="/dogs">犬一覧</RouterLink>
-          <button class="ghost-button" type="button" @click="logout">ログアウト</button>
+          <UserMenu
+            v-if="currentOwner"
+            :owner="currentOwner"
+            @updated="updateCurrentOwner"
+            @logout="logout"
+          />
         </template>
 
         <template v-else>

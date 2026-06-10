@@ -6,11 +6,11 @@
 
 Represents dog owners.
 
-| column     | type      | notes         |
-| ---------- | --------- | ------------- |
-| owner_id   | uuid      | primary key   |
-| name       | text      | display name  |
-| login_id   | text      | login id      |
+| column     | type      | notes         | null          |
+| ---------- | --------- | ------------- | ------------- |
+| owner_id   | uuid      | primary key   | No            |
+| name       | text      | display name  | No            |
+| login_id   | text      | login id      | No            |
 
 owner_id is used to system
 The login ID is used to identify users, and each user can choose their own ID.
@@ -21,11 +21,12 @@ The login ID is used to identify users, and each user can choose their own ID.
 
 Represents dogs.
 
-| column     | type      | notes         |
-| ---------- | --------- | ------------- |
-| dog_id     | uuid      | primary key   |
-| name       | text      | dog name      |
-| birthday   | date      | necessary     |
+| column     | type      | notes         | null          |
+| ---------- | --------- | ------------- | ------------- |
+| dog_id     | uuid      | primary key   | no            |
+| name       | text      | dog name      | no            |
+| birthday   | date      |               | yes           |
+| gender     | text      | allowed: 'male', 'female', 'unknown'| yes           |
 
 ---
 
@@ -33,12 +34,12 @@ Represents dogs.
 
 Many-to-many relation between owners and dogs.
 
-| column     | type      | notes              |
-| ---------- | --------- | ------------------ |
-| owner_dog_id | uuid    | primary key        |
-| owner_id   | uuid      | FK owners.owner_id |
-| dog_id     | uuid      | FK dogs.dog_id     |
-| role       | text      | optional           |
+| column     | type      | notes              | null          |
+| ---------- | --------- | ------------------ | ------------- |
+| owner_dog_id | uuid    | primary key        | no            |
+| owner_id   | uuid      | FK owners.owner_id | no            |
+| dog_id     | uuid      | FK dogs.dog_id     | no            |
+| role       | text      | optional           | yes           |
 
 Constraints:
 
