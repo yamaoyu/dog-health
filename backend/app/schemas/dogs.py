@@ -37,6 +37,25 @@ class DogCreateResponse(BaseModel):
     gender: DogGender | None
 
 
+class DogOwnerAddRequest(BaseModel):
+    owner_id: UUID
+
+
+class DogIdName(BaseModel):
+    dog_id: UUID
+    name: str
+
+
+class OwnerIdName(BaseModel):
+    owner_id: UUID
+    name: str
+
+
+class DogOwnerAddResponse(BaseModel):
+    dog: DogIdName
+    owner: OwnerIdName
+
+
 class DogUpdateRequest(BaseModel):
     name: str | None = Field(
         default=None,

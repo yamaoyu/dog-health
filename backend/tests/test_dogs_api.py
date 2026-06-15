@@ -4,6 +4,7 @@ from datetime import date
 from uuid import UUID, uuid4
 
 from fastapi.testclient import TestClient
+from sqlalchemy.exc import IntegrityError
 
 from app.main import app
 from app.models import Dog, Owner, OwnerDog
@@ -19,6 +20,8 @@ class FakeSession:
         self.flushed = False
         self.committed = False
         self.refreshed = False
+        self.rolled_back = False
+        self.raise_integrity_error_on_commit = False
 
     def add(self, item: Dog | Owner | OwnerDog) -> None:
         if isinstance(item, Dog):
@@ -47,10 +50,16 @@ class FakeSession:
         self.flushed = True
 
     def commit(self) -> None:
+        if self.raise_integrity_error_on_commit:
+            raise IntegrityError("duplicate owner dog", params=None, orig=None)
+
         self.committed = True
 
     def refresh(self, item: Dog) -> None:
         self.refreshed = True
+
+    def rollback(self) -> None:
+        self.rolled_back = True
 
 
 client = TestClient(app)
@@ -283,6 +292,135 @@ def test_update_dog_rejects_empty_request_body() -> None:
 
     assert response.status_code == 422
     assert response.json()["detail"][0]["msg"] == "Value error, 更新する項目を指定してください"
+
+
+def test_add_dog_owner_creates_owner_link() -> None:
+    fake_session = FakeSession()
+    owner_id = UUID("00000000-0000-0000-0000-000000000001")
+    dog_id = UUID("00000000-0000-0000-0000-000000000010")
+    fake_session.owners[owner_id] = Owner(owner_id=owner_id, name="Hanako", login_id="hanako")
+    fake_session.dog_by_id[dog_id] = Dog(
+        dog_id=dog_id,
+        name="Pochi",
+        birthday=date(2020, 1, 1),
+        gender="male",
+    )
+    app.dependency_overrides[get_dog_db_session] = lambda: fake_session
+
+    response = client.post(
+        f"/dogs/{dog_id}/owners",
+        json={"owner_id": str(owner_id)},
+    )
+
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 201
+    assert fake_session.committed is True
+    assert len(fake_session.owner_dogs) == 1
+    assert fake_session.owner_dogs[0].owner_id == owner_id
+    assert fake_session.owner_dogs[0].dog_id == dog_id
+    assert fake_session.owner_dogs[0].role is None
+    assert response.json() == {
+        "dog": {
+            "dog_id": str(dog_id),
+            "name": "Pochi",
+        },
+        "owner": {
+            "owner_id": str(owner_id),
+            "name": "Hanako",
+        },
+    }
+
+
+def test_add_dog_owner_returns_not_found_when_dog_missing() -> None:
+    fake_session = FakeSession()
+    owner_id = UUID("00000000-0000-0000-0000-000000000001")
+    fake_session.owners[owner_id] = Owner(owner_id=owner_id, name="Hanako", login_id="hanako")
+    app.dependency_overrides[get_dog_db_session] = lambda: fake_session
+
+    response = client.post(
+        "/dogs/00000000-0000-0000-0000-000000000099/owners",
+        json={"owner_id": str(owner_id)},
+    )
+
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 404
+    assert response.json() == {"detail": "犬が見つかりません"}
+    assert fake_session.committed is False
+    assert fake_session.owner_dogs == []
+
+
+def test_add_dog_owner_returns_not_found_when_owner_missing() -> None:
+    fake_session = FakeSession()
+    dog_id = UUID("00000000-0000-0000-0000-000000000010")
+    fake_session.dog_by_id[dog_id] = Dog(dog_id=dog_id, name="Pochi")
+    app.dependency_overrides[get_dog_db_session] = lambda: fake_session
+
+    response = client.post(
+        f"/dogs/{dog_id}/owners",
+        json={"owner_id": "00000000-0000-0000-0000-000000000099"},
+    )
+
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 404
+    assert response.json() == {"detail": "飼い主が見つかりません"}
+    assert fake_session.committed is False
+    assert fake_session.owner_dogs == []
+
+
+def test_add_dog_owner_already_linked() -> None:
+    fake_session = FakeSession()
+    owner_id = UUID("00000000-0000-0000-0000-000000000001")
+    dog_id = UUID("00000000-0000-0000-0000-000000000010")
+    owner = Owner(owner_id=owner_id, name="Hanako", login_id="hanako")
+    dog = Dog(dog_id=dog_id, name="Pochi")
+    dog.owners = [
+        OwnerDog(
+            owner_dog_id=uuid4(),
+            owner_id=owner_id,
+            dog_id=dog_id,
+            owner=owner,
+            dog=dog,
+        )
+    ]
+    fake_session.owners[owner_id] = owner
+    fake_session.dog_by_id[dog_id] = dog
+    app.dependency_overrides[get_dog_db_session] = lambda: fake_session
+
+    response = client.post(
+        f"/dogs/{dog_id}/owners",
+        json={"owner_id": str(owner_id)},
+    )
+
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 409
+    assert response.json() == {"detail": "既に紐づけられています"}
+    assert fake_session.committed is False
+    assert fake_session.owner_dogs == []
+
+
+def test_add_dog_owner_already_linked_on_commit() -> None:
+    fake_session = FakeSession()
+    owner_id = UUID("00000000-0000-0000-0000-000000000001")
+    dog_id = UUID("00000000-0000-0000-0000-000000000010")
+    fake_session.owners[owner_id] = Owner(owner_id=owner_id, name="Hanako", login_id="hanako")
+    fake_session.dog_by_id[dog_id] = Dog(dog_id=dog_id, name="Pochi")
+    fake_session.raise_integrity_error_on_commit = True
+    app.dependency_overrides[get_dog_db_session] = lambda: fake_session
+
+    response = client.post(
+        f"/dogs/{dog_id}/owners",
+        json={"owner_id": str(owner_id)},
+    )
+
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 409
+    assert response.json() == {"detail": "既に紐づけられています"}
+    assert fake_session.rolled_back is True
 
 
 def test_list_dog_owners_returns_related_owners() -> None:
