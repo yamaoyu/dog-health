@@ -4,6 +4,7 @@ from collections.abc import Generator
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -80,11 +81,13 @@ def add_dog_owner(
             detail="犬が見つかりません",
         )
 
-    owner = db_session.get(Owner, payload.owner_id)
+    owner = db_session.execute(
+        select(Owner).where(Owner.login_id == payload.login_id),
+    ).scalar_one_or_none()
     if owner is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="飼い主が見つかりません",
+            detail="ログインIDに一致する飼い主が見つかりません",
         )
 
     if any(owner_dog.owner_id == owner.owner_id for owner_dog in dog.owners):

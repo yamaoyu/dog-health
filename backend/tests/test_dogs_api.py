@@ -11,6 +11,14 @@ from app.models import Dog, Owner, OwnerDog
 from app.routers.dogs import get_dog_db_session
 
 
+class FakeOwnerResult:
+    def __init__(self, owner: Owner | None) -> None:
+        self.owner = owner
+
+    def scalar_one_or_none(self) -> Owner | None:
+        return self.owner
+
+
 class FakeSession:
     def __init__(self) -> None:
         self.owners: dict[UUID, Owner] = {}
@@ -45,6 +53,15 @@ class FakeSession:
             return self.dog_by_id.get(item_id)
 
         return None
+
+    def execute(self, statement):  # type: ignore[no-untyped-def]
+        where_clause = statement.whereclause
+        login_id = where_clause.right.value
+        owner = next(
+            (owner for owner in self.owners.values() if owner.login_id == login_id),
+            None,
+        )
+        return FakeOwnerResult(owner)
 
     def flush(self) -> None:
         self.flushed = True
@@ -309,7 +326,7 @@ def test_add_dog_owner_creates_owner_link() -> None:
 
     response = client.post(
         f"/dogs/{dog_id}/owners",
-        json={"owner_id": str(owner_id)},
+        json={"login_id": "hanako"},
     )
 
     app.dependency_overrides.clear()
@@ -340,7 +357,7 @@ def test_add_dog_owner_returns_not_found_when_dog_missing() -> None:
 
     response = client.post(
         "/dogs/00000000-0000-0000-0000-000000000099/owners",
-        json={"owner_id": str(owner_id)},
+        json={"login_id": "hanako"},
     )
 
     app.dependency_overrides.clear()
@@ -351,7 +368,7 @@ def test_add_dog_owner_returns_not_found_when_dog_missing() -> None:
     assert fake_session.owner_dogs == []
 
 
-def test_add_dog_owner_returns_not_found_when_owner_missing() -> None:
+def test_add_dog_owner_returns_not_found_when_login_id_missing() -> None:
     fake_session = FakeSession()
     dog_id = UUID("00000000-0000-0000-0000-000000000010")
     fake_session.dog_by_id[dog_id] = Dog(dog_id=dog_id, name="Pochi")
@@ -359,13 +376,13 @@ def test_add_dog_owner_returns_not_found_when_owner_missing() -> None:
 
     response = client.post(
         f"/dogs/{dog_id}/owners",
-        json={"owner_id": "00000000-0000-0000-0000-000000000099"},
+        json={"login_id": "unknown"},
     )
 
     app.dependency_overrides.clear()
 
     assert response.status_code == 404
-    assert response.json() == {"detail": "飼い主が見つかりません"}
+    assert response.json() == {"detail": "ログインIDに一致する飼い主が見つかりません"}
     assert fake_session.committed is False
     assert fake_session.owner_dogs == []
 
@@ -391,7 +408,7 @@ def test_add_dog_owner_already_linked() -> None:
 
     response = client.post(
         f"/dogs/{dog_id}/owners",
-        json={"owner_id": str(owner_id)},
+        json={"login_id": "hanako"},
     )
 
     app.dependency_overrides.clear()
@@ -413,7 +430,7 @@ def test_add_dog_owner_already_linked_on_commit() -> None:
 
     response = client.post(
         f"/dogs/{dog_id}/owners",
-        json={"owner_id": str(owner_id)},
+        json={"login_id": "hanako"},
     )
 
     app.dependency_overrides.clear()

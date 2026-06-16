@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { toErrorMessage } from '../../../lib/api'
 import { useCurrentOwner } from '../../auth/session'
 import {
+  addDogOwner,
   createDog,
   fetchOwnerDogs,
   updateDog,
@@ -27,9 +28,16 @@ const updateDogBirthday = ref('')
 const updateDogGender = ref<DogGender | ''>('')
 const updateErrorMessage = ref('')
 const isUpdatingDog = ref(false)
+const openDogMenuId = ref<string | null>(null)
+const selectedAddOwnerDog = ref<OwnerDog | null>(null)
+const ownerLoginId = ref('')
+const addOwnerErrorMessage = ref('')
+const addOwnerSuccessMessage = ref('')
+const isAddingOwner = ref(false)
 
 const dogCountLabel = computed(() => `${dogsResponse.value?.dogs.length ?? 0}匹`)
 const isUpdateModalOpen = computed(() => selectedDog.value !== null)
+const isAddOwnerModalOpen = computed(() => selectedAddOwnerDog.value !== null)
 
 async function loadDogs(): Promise<void> {
   if (!owner.value) {
@@ -66,6 +74,7 @@ function resetDogForm(): void {
 }
 
 function openDogUpdateModal(dog: OwnerDog): void {
+  openDogMenuId.value = null
   selectedDog.value = dog
   updateDogName.value = dog.name
   updateDogBirthday.value = dog.birthday ?? ''
@@ -80,6 +89,28 @@ function closeDogUpdateModal(): void {
 
   selectedDog.value = null
   updateErrorMessage.value = ''
+}
+
+function toggleDogMenu(dogId: string): void {
+  openDogMenuId.value = openDogMenuId.value === dogId ? null : dogId
+}
+
+function openAddOwnerModal(dog: OwnerDog): void {
+  openDogMenuId.value = null
+  selectedAddOwnerDog.value = dog
+  ownerLoginId.value = ''
+  addOwnerErrorMessage.value = ''
+  addOwnerSuccessMessage.value = ''
+}
+
+function closeAddOwnerModal(): void {
+  if (isAddingOwner.value) {
+    return
+  }
+
+  selectedAddOwnerDog.value = null
+  ownerLoginId.value = ''
+  addOwnerErrorMessage.value = ''
 }
 
 function validateDogForm(): string {
@@ -103,6 +134,19 @@ function validateDogUpdateForm(): string {
   }
   if (normalizedDogName.length < 2 || normalizedDogName.length > 20) {
     return '犬の名前は2文字以上20文字以下で入力してください。'
+  }
+
+  return ''
+}
+
+function validateAddOwnerForm(): string {
+  const normalizedLoginId = ownerLoginId.value.trim()
+
+  if (!normalizedLoginId) {
+    return 'ログインIDは必須です。'
+  }
+  if (normalizedLoginId.length < 4 || normalizedLoginId.length > 20) {
+    return 'ログインIDは4文字以上20文字以下で入力してください。'
   }
 
   return ''
@@ -180,8 +224,43 @@ async function submitDogUpdate(): Promise<void> {
   }
 }
 
+async function submitAddOwner(): Promise<void> {
+  if (!selectedAddOwnerDog.value) {
+    return
+  }
+
+  addOwnerErrorMessage.value = ''
+  addOwnerSuccessMessage.value = ''
+
+  const validationMessage = validateAddOwnerForm()
+  if (validationMessage) {
+    addOwnerErrorMessage.value = validationMessage
+    return
+  }
+
+  isAddingOwner.value = true
+  try {
+    const response = await addDogOwner(selectedAddOwnerDog.value.dog_id, {
+      login_id: ownerLoginId.value.trim(),
+    })
+    addOwnerSuccessMessage.value = `${response.owner.name}さんを${response.dog.name}に紐づけました。`
+    selectedAddOwnerDog.value = null
+    ownerLoginId.value = ''
+    await loadDogs()
+  } catch (error) {
+    addOwnerErrorMessage.value = toErrorMessage(error, '飼い主の追加に失敗しました。')
+  } finally {
+    isAddingOwner.value = false
+  }
+}
+
 function handleEscape(event: KeyboardEvent): void {
   if (event.key !== 'Escape') {
+    return
+  }
+
+  if (isAddOwnerModalOpen.value && !isAddingOwner.value) {
+    closeAddOwnerModal()
     return
   }
 
@@ -192,15 +271,26 @@ function handleEscape(event: KeyboardEvent): void {
 
   if (isUpdateModalOpen.value && !isUpdatingDog.value) {
     closeDogUpdateModal()
+    return
   }
+
+  if (openDogMenuId.value) {
+    openDogMenuId.value = null
+  }
+}
+
+function closeDogMenu(): void {
+  openDogMenuId.value = null
 }
 
 onMounted(() => {
   void loadDogs()
+  window.addEventListener('click', closeDogMenu)
   window.addEventListener('keydown', handleEscape)
 })
 
 onBeforeUnmount(() => {
+  window.removeEventListener('click', closeDogMenu)
   window.removeEventListener('keydown', handleEscape)
 })
 </script>
@@ -222,6 +312,7 @@ onBeforeUnmount(() => {
         </div>
       </div>
 
+      <p v-if="addOwnerSuccessMessage" class="success-text">{{ addOwnerSuccessMessage }}</p>
       <p v-if="errorMessage" class="error-text">{{ errorMessage }}</p>
 
       <div v-else-if="isLoading" class="callout">
@@ -237,14 +328,30 @@ onBeforeUnmount(() => {
 
       <ul v-else class="dog-list">
         <li v-for="dog in dogsResponse?.dogs" :key="dog.dog_id">
-          <div class="dog-list-title">{{ dog.name }}</div>
+          <div class="dog-card-header">
+            <div class="dog-list-title">{{ dog.name }}</div>
+            <div class="dog-card-menu" @click.stop>
+              <button
+                class="dog-menu-button"
+                type="button"
+                :aria-label="`${dog.name}のメニュー`"
+                :aria-expanded="openDogMenuId === dog.dog_id"
+                @click="toggleDogMenu(dog.dog_id)"
+              >
+                ...
+              </button>
+              <div v-if="openDogMenuId === dog.dog_id" class="dog-menu-panel" role="menu">
+                <button class="menu-button" type="button" role="menuitem" @click="openDogUpdateModal(dog)">
+                  プロフィール更新
+                </button>
+                <button class="menu-button" type="button" role="menuitem" @click="openAddOwnerModal(dog)">
+                  飼い主追加
+                </button>
+              </div>
+            </div>
+          </div>
           <p class="meta-copy">誕生日: {{ dog.birthday ?? '未登録' }}</p>
           <p class="meta-copy">性別: {{ formatDogGender(dog.gender) }}</p>
-          <div class="actions actions-spacious">
-            <button class="ghost-button" type="button" @click="openDogUpdateModal(dog)">
-              プロフィール更新
-            </button>
-          </div>
         </li>
       </ul>
 
@@ -344,6 +451,46 @@ onBeforeUnmount(() => {
               type="button"
               :disabled="isUpdatingDog"
               @click="closeDogUpdateModal"
+            >
+              キャンセル
+            </button>
+          </div>
+        </form>
+      </section>
+    </div>
+
+    <div v-if="isAddOwnerModalOpen" class="modal-backdrop" @click.self="closeAddOwnerModal">
+      <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="dog-owner-add-title">
+        <div class="modal-header">
+          <div>
+            <h3 id="dog-owner-add-title">飼い主追加</h3>
+            <p class="meta-copy">{{ selectedAddOwnerDog?.name }}に飼い主を紐づけます。</p>
+          </div>
+        </div>
+
+        <form class="form" @submit.prevent="submitAddOwner">
+          <div class="field">
+            <label for="owner-login-id">飼い主のログインID</label>
+            <input
+              id="owner-login-id"
+              v-model="ownerLoginId"
+              autocomplete="username"
+              maxlength="20"
+            />
+            <p class="hint">4文字以上20文字以下で入力してください。</p>
+          </div>
+
+          <p v-if="addOwnerErrorMessage" class="error-text">{{ addOwnerErrorMessage }}</p>
+
+          <div class="actions">
+            <button class="primary-button" type="submit" :disabled="isAddingOwner">
+              {{ isAddingOwner ? '追加中...' : '飼い主を追加' }}
+            </button>
+            <button
+              class="ghost-button"
+              type="button"
+              :disabled="isAddingOwner"
+              @click="closeAddOwnerModal"
             >
               キャンセル
             </button>
