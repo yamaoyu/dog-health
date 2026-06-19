@@ -30,6 +30,25 @@ export type UpdateDogResponse = {
   gender: DogGender | null
 }
 
+export type AddDogOwnerPayload = {
+  login_id: string
+}
+
+export type DogIdName = {
+  dog_id: string
+  name: string
+}
+
+export type OwnerIdName = {
+  owner_id: string
+  name: string
+}
+
+export type AddDogOwnerResponse = {
+  dog: DogIdName
+  owner: OwnerIdName
+}
+
 export type OwnerDog = {
   dog_id: string
   name: string
@@ -56,6 +75,16 @@ export async function updateDog(
 ): Promise<UpdateDogResponse> {
   return apiRequest<UpdateDogResponse>(`/dogs/${dogId}`, {
     method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function addDogOwner(
+  dogId: string,
+  payload: AddDogOwnerPayload,
+): Promise<AddDogOwnerResponse> {
+  return apiRequest<AddDogOwnerResponse>(`/dogs/${dogId}/owners`, {
+    method: 'POST',
     body: JSON.stringify(payload),
   })
 }

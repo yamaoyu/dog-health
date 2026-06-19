@@ -282,7 +282,8 @@ describe('DogListView', () => {
     render(DogListView)
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
 
-    await user.click(await screen.findByRole('button', { name: 'プロフィール更新' }))
+    await user.click(await screen.findByRole('button', { name: 'Pochiのメニュー' }))
+    await user.click(screen.getByRole('menuitem', { name: 'プロフィール更新' }))
     const dialog = screen.getByRole('dialog', { name: '犬プロフィール更新' })
     await user.clear(within(dialog).getByLabelText('犬の名前'))
     await user.type(within(dialog).getByLabelText('犬の名前'), ' Hachi ')
@@ -339,7 +340,8 @@ describe('DogListView', () => {
     render(DogListView)
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
 
-    await user.click(await screen.findByRole('button', { name: 'プロフィール更新' }))
+    await user.click(await screen.findByRole('button', { name: 'Pochiのメニュー' }))
+    await user.click(screen.getByRole('menuitem', { name: 'プロフィール更新' }))
     const dialog = screen.getByRole('dialog', { name: '犬プロフィール更新' })
     await user.clear(within(dialog).getByLabelText('犬の名前'))
     await user.type(within(dialog).getByLabelText('犬の名前'), 'Hachi')
@@ -375,12 +377,140 @@ describe('DogListView', () => {
     render(DogListView)
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
 
-    await user.click(await screen.findByRole('button', { name: 'プロフィール更新' }))
+    await user.click(await screen.findByRole('button', { name: 'Pochiのメニュー' }))
+    await user.click(screen.getByRole('menuitem', { name: 'プロフィール更新' }))
     const dialog = screen.getByRole('dialog', { name: '犬プロフィール更新' })
     await user.clear(within(dialog).getByLabelText('犬の名前'))
     await user.click(within(dialog).getByRole('button', { name: 'プロフィールを更新' }))
 
     expect(await within(dialog).findByText('犬の名前は必須です。')).toBeTruthy()
     expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('犬メニューから飼い主追加フォームを送信すると飼い主追加APIが呼ばれる', async () => {
+    setLoggedInOwner()
+    const fetchMock = vi.fn((url: string, init?: RequestInit) => {
+      if (url.endsWith('/dogs/dog-1/owners') && init?.method === 'POST') {
+        return Promise.resolve(
+          jsonResponse({
+            dog: {
+              dog_id: 'dog-1',
+              name: 'Pochi',
+            },
+            owner: {
+              owner_id: 'owner-2',
+              name: 'Taro',
+            },
+          }),
+        )
+      }
+
+      return Promise.resolve(
+        jsonResponse({
+          owner_id: 'owner-1',
+          owner_name: 'Hanako',
+          dogs: [
+            {
+              dog_id: 'dog-1',
+              name: 'Pochi',
+              birthday: '2020-01-01',
+              gender: 'male',
+            },
+          ],
+        }),
+      )
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const user = userEvent.setup()
+    render(DogListView)
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
+
+    await user.click(await screen.findByRole('button', { name: 'Pochiのメニュー' }))
+    await user.click(screen.getByRole('menuitem', { name: '飼い主追加' }))
+    const dialog = screen.getByRole('dialog', { name: '飼い主追加' })
+    await user.type(within(dialog).getByLabelText('飼い主のログインID'), ' taro ')
+    await user.click(within(dialog).getByRole('button', { name: '飼い主を追加' }))
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3))
+    expect(fetchMock).toHaveBeenNthCalledWith(2, 'http://localhost:8010/dogs/dog-1/owners', {
+      method: 'POST',
+      body: JSON.stringify({
+        login_id: 'taro',
+      }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+    expect(await screen.findByText('TaroさんをPochiに紐づけました。')).toBeTruthy()
+  })
+
+  it('飼い主追加フォームで入力エラーがある場合は飼い主追加APIを呼ばない', async () => {
+    setLoggedInOwner()
+    const fetchMock = vi.fn().mockResolvedValue(
+      jsonResponse({
+        owner_id: 'owner-1',
+        owner_name: 'Hanako',
+        dogs: [
+          {
+            dog_id: 'dog-1',
+            name: 'Pochi',
+            birthday: '2020-01-01',
+            gender: 'male',
+          },
+        ],
+      }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const user = userEvent.setup()
+    render(DogListView)
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
+
+    await user.click(await screen.findByRole('button', { name: 'Pochiのメニュー' }))
+    await user.click(screen.getByRole('menuitem', { name: '飼い主追加' }))
+    const dialog = screen.getByRole('dialog', { name: '飼い主追加' })
+    await user.click(within(dialog).getByRole('button', { name: '飼い主を追加' }))
+
+    expect(await within(dialog).findByText('ログインIDは必須です。')).toBeTruthy()
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('既に紐づけられている場合飼い主追加APIのエラーをフォーム内に表示する', async () => {
+    setLoggedInOwner()
+    const fetchMock = vi.fn((url: string, init?: RequestInit) => {
+      if (url.endsWith('/dogs/dog-1/owners') && init?.method === 'POST') {
+        return Promise.resolve(jsonResponse({ detail: '既に紐づけられています' }, 409))
+      }
+
+      return Promise.resolve(
+        jsonResponse({
+          owner_id: 'owner-1',
+          owner_name: 'Hanako',
+          dogs: [
+            {
+              dog_id: 'dog-1',
+              name: 'Pochi',
+              birthday: '2020-01-01',
+              gender: 'male',
+            },
+          ],
+        }),
+      )
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const user = userEvent.setup()
+    render(DogListView)
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
+
+    await user.click(await screen.findByRole('button', { name: 'Pochiのメニュー' }))
+    await user.click(screen.getByRole('menuitem', { name: '飼い主追加' }))
+    const dialog = screen.getByRole('dialog', { name: '飼い主追加' })
+    await user.type(within(dialog).getByLabelText('飼い主のログインID'), 'taro')
+    await user.click(within(dialog).getByRole('button', { name: '飼い主を追加' }))
+
+    expect(await within(dialog).findByText('既に紐づけられています')).toBeTruthy()
+    expect(fetchMock).toHaveBeenCalledTimes(2)
   })
 })

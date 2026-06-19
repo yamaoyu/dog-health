@@ -5,7 +5,12 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 from datetime import date
 from uuid import UUID
-from app.schemas.common_params import DOGNAME_MIN_LENGTH, DOGNAME_MAX_LENGTH
+from app.schemas.common_params import (
+    DOGNAME_MAX_LENGTH,
+    DOGNAME_MIN_LENGTH,
+    LOGINID_MAX_LENGTH,
+    LOGINID_MIN_LENGTH,
+)
 
 DogGender = Literal["male", "female", "unknown"]
 
@@ -35,6 +40,37 @@ class DogCreateResponse(BaseModel):
     name: str
     birthday: date | None
     gender: DogGender | None
+
+
+class DogOwnerAddRequest(BaseModel):
+    login_id: str = Field(min_length=LOGINID_MIN_LENGTH, max_length=LOGINID_MAX_LENGTH)
+
+    @field_validator("login_id", mode="before")
+    @classmethod
+    def validate_login_id(cls, value: str) -> str:
+        if not isinstance(value, str):
+            raise ValueError("ログインIDは文字列で入力してください")
+
+        normalized_value = value.strip()
+        if not normalized_value:
+            raise ValueError("ログインIDは必須です")
+
+        return normalized_value
+
+
+class DogIdName(BaseModel):
+    dog_id: UUID
+    name: str
+
+
+class OwnerIdName(BaseModel):
+    owner_id: UUID
+    name: str
+
+
+class DogOwnerAddResponse(BaseModel):
+    dog: DogIdName
+    owner: OwnerIdName
 
 
 class DogUpdateRequest(BaseModel):

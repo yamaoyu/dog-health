@@ -4,6 +4,8 @@ from collections.abc import Generator
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db_session
@@ -11,10 +13,14 @@ from app.models.entities import Dog, Owner, OwnerDog
 from app.schemas.dogs import (
     DogCreateRequest,
     DogCreateResponse,
+    DogIdName,
+    DogOwnerAddRequest,
+    DogOwnerAddResponse,
     DogOwnerSummary,
     DogOwnersResponse,
     DogResponse,
     DogUpdateRequest,
+    OwnerIdName,
 )
 
 
@@ -55,6 +61,55 @@ def create_dog(
         name=dog.name,
         birthday=dog.birthday,
         gender=dog.gender,
+    )
+
+
+@router.post(
+    "/{dog_id}/owners",
+    response_model=DogOwnerAddResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def add_dog_owner(
+    dog_id: UUID,
+    payload: DogOwnerAddRequest,
+    db_session: Session = Depends(get_dog_db_session),
+) -> DogOwnerAddResponse:
+    dog = db_session.get(Dog, dog_id)
+    if dog is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="犬が見つかりません",
+        )
+
+    owner = db_session.execute(
+        select(Owner).where(Owner.login_id == payload.login_id),
+    ).scalar_one_or_none()
+    if owner is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="ログインIDに一致する飼い主が見つかりません",
+        )
+
+    if any(owner_dog.owner_id == owner.owner_id for owner_dog in dog.owners):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="既に紐づけられています",
+        )
+
+    owner_dog = OwnerDog(owner_id=owner.owner_id, dog_id=dog.dog_id)
+    db_session.add(owner_dog)
+    try:
+        db_session.commit()
+    except IntegrityError:
+        db_session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="既に紐づけられています",
+        ) from None
+
+    return DogOwnerAddResponse(
+        dog=DogIdName(dog_id=dog.dog_id, name=dog.name),
+        owner=OwnerIdName(owner_id=owner.owner_id, name=owner.name),
     )
 
 
