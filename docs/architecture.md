@@ -34,26 +34,23 @@ Initial tables:
 * owners
 * dogs
 * owner_dogs
-
-Future plan:
-
 * events
+* event_types
+* walk_events
+* food_events
+* toilet_events
 
 ---
 
 # Event Design
 
-This section is future scope.
-Events are stored in a single table.
+Events use a common `events` table plus event-specific detail tables.
 
 Initial event types:
 
-* meal
 * walk
-* medicine
+* food
 * toilet
-* hospital
-* memo
 
 Custom event types are out of scope for MVP.
 
@@ -86,7 +83,7 @@ Containers:
 
 # Directory structure
 ## backend
-Service/repository layers are intentionally omitted during MVP phase.
+Repository layers are introduced only where DB branching would make routers too large.
 
 alembic/
 app/
