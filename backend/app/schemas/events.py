@@ -1,18 +1,22 @@
 from __future__ import annotations
 
 from datetime import datetime
+from decimal import Decimal
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator, model_validator
 
 
 EventTypeCode = Literal["walk", "food", "toilet"]
+EventDetailValue = str | int | Decimal | None
 
 
 class EventDetailBase(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+
+class TextEventDetailBase(EventDetailBase):
     @field_validator("*", mode="before")
     @classmethod
     def validate_optional_text(cls, value: str | None) -> str | None:
@@ -27,16 +31,21 @@ class EventDetailBase(BaseModel):
 
 
 class WalkEventDetail(EventDetailBase):
-    distance: str | None = None
-    time: str | None = None
+    distance_km: Decimal | None = Field(default=None, ge=0, le=10, decimal_places=1)
+    duration_minutes: int | None = Field(default=None, ge=0, le=1439)
 
 
 class FoodEventDetail(EventDetailBase):
     menu: str | None = None
-    amount: str | None = None
+    amount_grams: int | None = Field(default=None, ge=0, le=1000)
+
+    @field_validator("menu", mode="before")
+    @classmethod
+    def validate_menu(cls, value: str | None) -> str | None:
+        return TextEventDetailBase.validate_optional_text(value)
 
 
-class ToiletEventDetail(EventDetailBase):
+class ToiletEventDetail(TextEventDetailBase):
     type: str | None = None
     condition: str | None = None
 
@@ -53,7 +62,7 @@ class EventCreateRequest(BaseModel):
     event_type_code: EventTypeCode
     occurred_at: datetime
     memo: str | None = Field(default=None, max_length=1000)
-    detail: dict[str, str | None] = Field(default_factory=dict)
+    detail: dict[str, EventDetailValue] = Field(default_factory=dict)
 
     @field_validator("memo", mode="before")
     @classmethod
@@ -86,4 +95,11 @@ class EventCreateResponse(BaseModel):
     event_type: EventTypeResponse
     occurred_at: datetime
     memo: str | None
-    detail: dict[str, str | None]
+    detail: dict[str, EventDetailValue]
+
+    @field_serializer("detail")
+    def serialize_detail(self, detail: dict[str, EventDetailValue]) -> dict[str, str | int | float | None]:
+        return {
+            key: float(value) if isinstance(value, Decimal) else value
+            for key, value in detail.items()
+        }

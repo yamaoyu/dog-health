@@ -62,8 +62,8 @@ def upgrade() -> None:
     op.create_table(
         "walk_events",
         sa.Column("event_id", postgresql.UUID(as_uuid=True), nullable=False),
-        sa.Column("distance", sa.Text(), nullable=True),
-        sa.Column("time", sa.Text(), nullable=True),
+        sa.Column("distance_km", sa.Numeric(4, 1), nullable=True),
+        sa.Column("duration_minutes", sa.Integer(), nullable=True),
         sa.ForeignKeyConstraint(["event_id"], ["events.event_id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("event_id"),
     )
@@ -72,7 +72,7 @@ def upgrade() -> None:
         "food_events",
         sa.Column("event_id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column("menu", sa.Text(), nullable=True),
-        sa.Column("amount", sa.Text(), nullable=True),
+        sa.Column("amount_grams", sa.Integer(), nullable=True),
         sa.ForeignKeyConstraint(["event_id"], ["events.event_id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("event_id"),
     )

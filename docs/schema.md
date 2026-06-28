@@ -84,11 +84,11 @@ Common dog event records.
 
 Details for walk events.
 
-| column   | type | notes                  | null |
-| -------- | ---- | ---------------------- | ---- |
-| event_id | uuid | PK, FK events.event_id | no   |
-| distance | text | optional distance      | yes  |
-| time     | text | optional duration      | yes  |
+| column           | type         | notes                                      | null |
+| ---------------- | ------------ | ------------------------------------------ | ---- |
+| event_id         | uuid         | PK, FK events.event_id                     | no   |
+| distance_km      | numeric(4,1) | optional distance in kilometers, max 10.0  | yes  |
+| duration_minutes | integer      | optional duration in minutes               | yes  |
 
 ---
 
@@ -96,11 +96,11 @@ Details for walk events.
 
 Details for food events.
 
-| column   | type | notes                  | null |
-| -------- | ---- | ---------------------- | ---- |
-| event_id | uuid | PK, FK events.event_id | no   |
-| menu     | text | optional menu          | yes  |
-| amount   | text | optional amount        | yes  |
+| column       | type    | notes                              | null |
+| ------------ | ------- | ---------------------------------- | ---- |
+| event_id     | uuid    | PK, FK events.event_id             | no   |
+| menu         | text    | optional menu                      | yes  |
+| amount_grams | integer | optional amount in grams, max 1000 | yes  |
 
 ---
 

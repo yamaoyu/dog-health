@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models import Dog, Event, EventType, FoodEvent, ToiletEvent, WalkEvent
-from app.schemas.events import EventCreateRequest, EventTypeCode
+from app.schemas.events import EventCreateRequest, EventDetailValue, EventTypeCode
 
 
 class EventDogNotFoundError(Exception):
@@ -20,34 +20,34 @@ class EventTypeNotFoundError(Exception):
 
 
 class DetailRepository(Protocol):
-    def create(self, db_session: Session, event_id: UUID, detail: dict[str, str | None]) -> None:
+    def create(self, db_session: Session, event_id: UUID, detail: dict[str, EventDetailValue]) -> None:
         pass
 
 
 class WalkEventRepository:
-    def create(self, db_session: Session, event_id: UUID, detail: dict[str, str | None]) -> None:
+    def create(self, db_session: Session, event_id: UUID, detail: dict[str, EventDetailValue]) -> None:
         db_session.add(
             WalkEvent(
                 event_id=event_id,
-                distance=detail.get("distance"),
-                time=detail.get("time"),
+                distance_km=detail.get("distance_km"),
+                duration_minutes=detail.get("duration_minutes"),
             ),
         )
 
 
 class FoodEventRepository:
-    def create(self, db_session: Session, event_id: UUID, detail: dict[str, str | None]) -> None:
+    def create(self, db_session: Session, event_id: UUID, detail: dict[str, EventDetailValue]) -> None:
         db_session.add(
             FoodEvent(
                 event_id=event_id,
                 menu=detail.get("menu"),
-                amount=detail.get("amount"),
+                amount_grams=detail.get("amount_grams"),
             ),
         )
 
 
 class ToiletEventRepository:
-    def create(self, db_session: Session, event_id: UUID, detail: dict[str, str | None]) -> None:
+    def create(self, db_session: Session, event_id: UUID, detail: dict[str, EventDetailValue]) -> None:
         db_session.add(
             ToiletEvent(
                 event_id=event_id,
@@ -69,7 +69,7 @@ class CreatedEvent:
     event: Event
     event_type: EventType
     event_type_code: EventTypeCode
-    detail: dict[str, str | None]
+    detail: dict[str, EventDetailValue]
 
 
 class EventRepository:

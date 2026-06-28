@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from decimal import Decimal
 from uuid import UUID, uuid4
 
 from fastapi.testclient import TestClient
@@ -118,8 +119,8 @@ def test_create_walk_event_creates_event_and_detail() -> None:
             "occurred_at": "2026-06-27T21:00:00+09:00",
             "memo": "  evening walk  ",
             "detail": {
-                "distance": "  2km  ",
-                "time": "  30min  ",
+                "distance_km": 2.0,
+                "duration_minutes": 90,
             },
         },
     )
@@ -137,8 +138,8 @@ def test_create_walk_event_creates_event_and_detail() -> None:
     assert fake_session.events[0].occurred_at == datetime.fromisoformat("2026-06-27T21:00:00+09:00")
     assert fake_session.events[0].memo == "evening walk"
     assert fake_session.walk_events[0].event_id == fake_session.events[0].event_id
-    assert fake_session.walk_events[0].distance == "2km"
-    assert fake_session.walk_events[0].time == "30min"
+    assert fake_session.walk_events[0].distance_km == Decimal("2.0")
+    assert fake_session.walk_events[0].duration_minutes == 90
     assert response.json() == {
         "event_id": str(fake_session.events[0].event_id),
         "dog_id": str(dog_id),
@@ -150,8 +151,8 @@ def test_create_walk_event_creates_event_and_detail() -> None:
         "occurred_at": "2026-06-27T21:00:00+09:00",
         "memo": "evening walk",
         "detail": {
-            "distance": "2km",
-            "time": "30min",
+            "distance_km": 2.0,
+            "duration_minutes": 90,
         },
     }
 
@@ -168,7 +169,7 @@ def test_create_food_event_creates_food_detail() -> None:
             "occurred_at": "2026-06-27T08:00:00+09:00",
             "detail": {
                 "menu": "meat",
-                "amount": "80g",
+                "amount_grams": 80,
             },
         },
     )
@@ -178,9 +179,9 @@ def test_create_food_event_creates_food_detail() -> None:
     assert response.status_code == 201
     assert len(fake_session.food_events) == 1
     assert fake_session.food_events[0].menu == "meat"
-    assert fake_session.food_events[0].amount == "80g"
+    assert fake_session.food_events[0].amount_grams == 80
     assert response.json()["event_type"]["code"] == "food"
-    assert response.json()["detail"] == {"menu": "meat", "amount": "80g"}
+    assert response.json()["detail"] == {"menu": "meat", "amount_grams": 80}
 
 
 def test_create_toilet_event_creates_toilet_detail() -> None:
@@ -278,6 +279,108 @@ def test_create_event_rejects_detail_for_other_event_type() -> None:
             "occurred_at": "2026-06-27T21:00:00+09:00",
             "detail": {
                 "menu": "meat",
+            },
+        },
+    )
+
+    assert response.status_code == 422
+
+
+def test_create_food_event_rejects_amount_field() -> None:
+    response = client.post(
+        "/events",
+        json={
+            "dog_id": "00000000-0000-0000-0000-000000000010",
+            "event_type_code": "food",
+            "occurred_at": "2026-06-27T08:00:00+09:00",
+            "detail": {
+                "menu": "meat",
+                "amount": "80g",
+            },
+        },
+    )
+
+    assert response.status_code == 422
+
+
+def test_create_food_event_rejects_negative_amount_grams() -> None:
+    response = client.post(
+        "/events",
+        json={
+            "dog_id": "00000000-0000-0000-0000-000000000010",
+            "event_type_code": "food",
+            "occurred_at": "2026-06-27T08:00:00+09:00",
+            "detail": {
+                "menu": "meat",
+                "amount_grams": -1,
+            },
+        },
+    )
+
+    assert response.status_code == 422
+
+
+def test_create_food_event_rejects_amount_grams_over_limit() -> None:
+    response = client.post(
+        "/events",
+        json={
+            "dog_id": "00000000-0000-0000-0000-000000000010",
+            "event_type_code": "food",
+            "occurred_at": "2026-06-27T08:00:00+09:00",
+            "detail": {
+                "menu": "meat",
+                "amount_grams": 1001,
+            },
+        },
+    )
+
+    assert response.status_code == 422
+
+
+def test_create_walk_event_rejects_invalid_distance_range() -> None:
+    response = client.post(
+        "/events",
+        json={
+            "dog_id": "00000000-0000-0000-0000-000000000010",
+            "event_type_code": "walk",
+            "occurred_at": "2026-06-27T21:00:00+09:00",
+            "detail": {
+                "distance_km": 10.1,
+                "duration_minutes": 30,
+            },
+        },
+    )
+
+    assert response.status_code == 422
+
+
+def test_create_walk_event_rejects_distance_with_too_many_decimal_places() -> None:
+    response = client.post(
+        "/events",
+        json={
+            "dog_id": "00000000-0000-0000-0000-000000000010",
+            "event_type_code": "walk",
+            "occurred_at": "2026-06-27T21:00:00+09:00",
+            "detail": {
+                "distance_km": 2.05,
+                "duration_minutes": 30,
+            },
+        },
+    )
+
+    assert response.status_code == 422
+
+
+def test_create_walk_event_rejects_invalid_duration_range() -> None:
+    response = client.post(
+        "/events",
+        json={
+            "dog_id": "00000000-0000-0000-0000-000000000010",
+            "event_type_code": "walk",
+            "occurred_at": "2026-06-27T21:00:00+09:00",
+            "detail": {
+                "distance_km": 2.0,
+                "duration_minutes": 1440,
             },
         },
     )

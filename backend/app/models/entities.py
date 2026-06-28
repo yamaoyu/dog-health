@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import uuid
 from datetime import date, datetime
+from decimal import Decimal
 
-from sqlalchemy import Boolean, CheckConstraint, Date, DateTime, ForeignKey, String, Text, UniqueConstraint, text
+from sqlalchemy import Boolean, CheckConstraint, Date, DateTime, ForeignKey, Integer, Numeric, String, Text, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -124,8 +125,8 @@ class WalkEvent(Base):
         ForeignKey("events.event_id", ondelete="CASCADE"),
         primary_key=True,
     )
-    distance: Mapped[str | None] = mapped_column(Text, nullable=True)
-    time: Mapped[str | None] = mapped_column(Text, nullable=True)
+    distance_km: Mapped[Decimal | None] = mapped_column(Numeric(4, 1), nullable=True)
+    duration_minutes: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     event: Mapped[Event] = relationship(back_populates="walk_event")
 
@@ -139,7 +140,7 @@ class FoodEvent(Base):
         primary_key=True,
     )
     menu: Mapped[str | None] = mapped_column(Text, nullable=True)
-    amount: Mapped[str | None] = mapped_column(Text, nullable=True)
+    amount_grams: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     event: Mapped[Event] = relationship(back_populates="food_event")
 

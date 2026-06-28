@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from sqlalchemy import CheckConstraint, UniqueConstraint
+from sqlalchemy import CheckConstraint, Integer, Numeric, UniqueConstraint
 
 from app.models import Dog, Event, EventType, FoodEvent, Owner, OwnerDog, ToiletEvent, WalkEvent
 
@@ -96,8 +96,12 @@ def test_walk_event_model_matches_schema() -> None:
 
     assert table.name == "walk_events"
     assert table.c.event_id.primary_key is True
-    assert table.c.distance.nullable is True
-    assert table.c.time.nullable is True
+    assert table.c.distance_km.nullable is True
+    assert isinstance(table.c.distance_km.type, Numeric)
+    assert table.c.distance_km.type.precision == 4
+    assert table.c.distance_km.type.scale == 1
+    assert table.c.duration_minutes.nullable is True
+    assert isinstance(table.c.duration_minutes.type, Integer)
     assert foreign_key_targets == {"events.event_id"}
 
 
@@ -111,7 +115,8 @@ def test_food_event_model_matches_schema() -> None:
     assert table.name == "food_events"
     assert table.c.event_id.primary_key is True
     assert table.c.menu.nullable is True
-    assert table.c.amount.nullable is True
+    assert table.c.amount_grams.nullable is True
+    assert isinstance(table.c.amount_grams.type, Integer)
     assert foreign_key_targets == {"events.event_id"}
 
 
