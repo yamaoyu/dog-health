@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { toErrorMessage } from '../../../lib/api'
 import { useCurrentOwner } from '../../auth/session'
+import EventCreateModal from '../../events/components/EventCreateModal.vue'
 import {
   addDogOwner,
   createDog,
@@ -34,10 +35,13 @@ const ownerLoginId = ref('')
 const addOwnerErrorMessage = ref('')
 const addOwnerSuccessMessage = ref('')
 const isAddingOwner = ref(false)
+const selectedEventDog = ref<OwnerDog | null>(null)
+const eventSuccessMessage = ref('')
 
 const dogCountLabel = computed(() => `${dogsResponse.value?.dogs.length ?? 0}匹`)
 const isUpdateModalOpen = computed(() => selectedDog.value !== null)
 const isAddOwnerModalOpen = computed(() => selectedAddOwnerDog.value !== null)
+const isEventModalOpen = computed(() => selectedEventDog.value !== null)
 
 async function loadDogs(): Promise<void> {
   if (!owner.value) {
@@ -111,6 +115,21 @@ function closeAddOwnerModal(): void {
   selectedAddOwnerDog.value = null
   ownerLoginId.value = ''
   addOwnerErrorMessage.value = ''
+}
+
+function openEventModal(dog: OwnerDog): void {
+  openDogMenuId.value = null
+  selectedEventDog.value = dog
+  eventSuccessMessage.value = ''
+}
+
+function closeEventModal(): void {
+  selectedEventDog.value = null
+}
+
+function handleEventCreated(dogName: string): void {
+  selectedEventDog.value = null
+  eventSuccessMessage.value = `${dogName}のイベントを登録しました。`
 }
 
 function validateDogForm(): string {
@@ -259,6 +278,11 @@ function handleEscape(event: KeyboardEvent): void {
     return
   }
 
+  if (isEventModalOpen.value) {
+    closeEventModal()
+    return
+  }
+
   if (isAddOwnerModalOpen.value && !isAddingOwner.value) {
     closeAddOwnerModal()
     return
@@ -312,6 +336,7 @@ onBeforeUnmount(() => {
         </div>
       </div>
 
+      <p v-if="eventSuccessMessage" class="success-text">{{ eventSuccessMessage }}</p>
       <p v-if="addOwnerSuccessMessage" class="success-text">{{ addOwnerSuccessMessage }}</p>
       <p v-if="errorMessage" class="error-text">{{ errorMessage }}</p>
 
@@ -343,6 +368,9 @@ onBeforeUnmount(() => {
               <div v-if="openDogMenuId === dog.dog_id" class="dog-menu-panel" role="menu">
                 <button class="menu-button" type="button" role="menuitem" @click="openDogUpdateModal(dog)">
                   プロフィール更新
+                </button>
+                <button class="menu-button" type="button" role="menuitem" @click="openEventModal(dog)">
+                  イベント作成
                 </button>
                 <button class="menu-button" type="button" role="menuitem" @click="openAddOwnerModal(dog)">
                   飼い主追加
@@ -498,5 +526,12 @@ onBeforeUnmount(() => {
         </form>
       </section>
     </div>
+
+    <EventCreateModal
+      v-if="selectedEventDog"
+      :dog="selectedEventDog"
+      @close="closeEventModal"
+      @created="handleEventCreated"
+    />
   </section>
 </template>

@@ -39,6 +39,7 @@ body {
 button,
 input,
 select,
+textarea,
 code {
   font: inherit;
 }
@@ -275,7 +276,8 @@ h2 {
 }
 
 .field input,
-.field select {
+.field select,
+.field textarea {
   width: 100%;
   padding: 0.95rem 1rem;
   border: 1px solid var(--border);
@@ -285,9 +287,32 @@ h2 {
 }
 
 .field input:focus,
-.field select:focus {
+.field select:focus,
+.field textarea:focus {
   outline: 2px solid rgba(194, 97, 63, 0.18);
   border-color: rgba(194, 97, 63, 0.38);
+}
+
+.field textarea {
+  resize: vertical;
+}
+
+.split-input-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.inline-number-field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.inline-number-field span {
+  color: var(--muted);
+  font-weight: 700;
 }
 
 .hint,
@@ -412,6 +437,20 @@ h2 {
 
 .actions-spacious {
   margin-top: 10px;
+}
+
+.event-detail-section {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: rgba(194, 97, 63, 0.06);
+}
+
+.event-detail-title {
+  margin: 0;
+  font-weight: 700;
 }
 
 .modal-backdrop {
