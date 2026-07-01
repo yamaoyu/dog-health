@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Literal
 from uuid import UUID
@@ -9,6 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_valid
 
 
 EventTypeCode = Literal["walk", "food", "toilet"]
+EventPeriod = Literal["day", "week", "month"]
 EventDetailValue = str | int | Decimal | None
 
 
@@ -83,13 +84,20 @@ class EventCreateRequest(BaseModel):
         return self
 
 
+class EventListQuery(BaseModel):
+    dog_id: UUID
+    period: EventPeriod
+    date: date
+    event_type_code: EventTypeCode | None = None
+
+
 class EventTypeResponse(BaseModel):
     event_type_id: UUID
     code: EventTypeCode
     display_name: str
 
 
-class EventCreateResponse(BaseModel):
+class EventResponse(BaseModel):
     event_id: UUID
     dog_id: UUID
     event_type: EventTypeResponse
@@ -103,3 +111,11 @@ class EventCreateResponse(BaseModel):
             key: float(value) if isinstance(value, Decimal) else value
             for key, value in detail.items()
         }
+
+
+class EventCreateResponse(EventResponse):
+    pass
+
+
+class EventListResponse(BaseModel):
+    events: list[EventResponse]

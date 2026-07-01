@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Protocol
 from uuid import UUID
 
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.models import Dog, Event, EventType, FoodEvent, ToiletEvent, WalkEvent
 from app.schemas.events import EventCreateRequest, EventDetailValue, EventTypeCode
@@ -72,6 +73,38 @@ class CreatedEvent:
     detail: dict[str, EventDetailValue]
 
 
+@dataclass(frozen=True)
+class ListedEvent:
+    event: Event
+    event_type: EventType
+    event_type_code: EventTypeCode
+    detail: dict[str, EventDetailValue]
+
+
+def build_event_detail(event: Event) -> dict[str, EventDetailValue]:
+    event_type_code = event.event_type.code
+
+    if event_type_code == "walk":
+        walk_event = event.walk_event
+        return {
+            "distance_km": walk_event.distance_km if walk_event is not None else None,
+            "duration_minutes": walk_event.duration_minutes if walk_event is not None else None,
+        }
+
+    if event_type_code == "food":
+        food_event = event.food_event
+        return {
+            "menu": food_event.menu if food_event is not None else None,
+            "amount_grams": food_event.amount_grams if food_event is not None else None,
+        }
+
+    toilet_event = event.toilet_event
+    return {
+        "type": toilet_event.type if toilet_event is not None else None,
+        "condition": toilet_event.condition if toilet_event is not None else None,
+    }
+
+
 class EventRepository:
     def create(self, db_session: Session, payload: EventCreateRequest) -> CreatedEvent:
         dog = db_session.get(Dog, payload.dog_id)
@@ -112,3 +145,47 @@ class EventRepository:
             event_type_code=payload.event_type_code,
             detail=payload.detail,
         )
+
+    def get_events_list(
+        self,
+        db_session: Session,
+        dog_id: UUID,
+        start_at: datetime,
+        end_at: datetime,
+        event_type_code: EventTypeCode | None,
+    ) -> list[ListedEvent]:
+        dog = db_session.get(Dog, dog_id)
+        if dog is None:
+            raise EventDogNotFoundError
+
+        statement = (
+            select(Event)
+            .options(
+                joinedload(Event.event_type),
+                joinedload(Event.walk_event),
+                joinedload(Event.food_event),
+                joinedload(Event.toilet_event),
+            )
+            .where(
+                Event.dog_id == dog_id,
+                Event.occurred_at >= start_at,
+                Event.occurred_at < end_at,
+            )
+        )
+
+        if event_type_code is not None:
+            statement = statement.join(EventType).where(EventType.code == event_type_code)
+
+        events = db_session.execute(
+            statement.order_by(Event.occurred_at.asc(), Event.event_id.asc()),
+        ).scalars().all()
+
+        return [
+            ListedEvent(
+                event=event,
+                event_type=event.event_type,
+                event_type_code=event.event_type.code,
+                detail=build_event_detail(event),
+            )
+            for event in events
+        ]

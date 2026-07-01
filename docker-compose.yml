@@ -24,6 +24,7 @@ services:
       BACKEND_PORT: ${BACKEND_PORT:-8010}
       APP_NAME: ${APP_NAME:-dog-health-api}
       APP_ENV: ${APP_ENV:-development}
+      APP_TIMEZONE: ${APP_TIMEZONE:-Asia/Tokyo}
       FRONTEND_ORIGINS: ${FRONTEND_ORIGINS:-http://localhost:5180,http://127.0.0.1:5180}
       POSTGRES_HOST: ${POSTGRES_HOST:-db}
       POSTGRES_PORT: 5432
