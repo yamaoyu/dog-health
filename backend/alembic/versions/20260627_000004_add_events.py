@@ -58,6 +58,8 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["event_type_id"], ["event_types.event_type_id"]),
         sa.PrimaryKeyConstraint("event_id"),
     )
+    op.create_index("ix_events_dog_id_occurred_at", "events", ["dog_id", "occurred_at"])
+    op.create_index("ix_events_event_type_id", "events", ["event_type_id"])
 
     op.create_table(
         "walk_events",
@@ -91,5 +93,7 @@ def downgrade() -> None:
     op.drop_table("toilet_events")
     op.drop_table("food_events")
     op.drop_table("walk_events")
+    op.drop_index("ix_events_event_type_id", table_name="events")
+    op.drop_index("ix_events_dog_id_occurred_at", table_name="events")
     op.drop_table("events")
     op.drop_table("event_types")

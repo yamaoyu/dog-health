@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from sqlalchemy import CheckConstraint, Integer, Numeric, UniqueConstraint
+from sqlalchemy import CheckConstraint, Index, Integer, Numeric, UniqueConstraint
 
 from app.models import Dog, Event, EventType, FoodEvent, Owner, OwnerDog, ToiletEvent, WalkEvent
 
@@ -72,6 +72,11 @@ def test_event_type_model_matches_schema() -> None:
 
 def test_event_model_matches_schema() -> None:
     table = Event.__table__
+    indexes = {
+        index.name: {column.name for column in index.columns}
+        for index in table.indexes
+        if isinstance(index, Index)
+    }
     foreign_key_targets = {
         foreign_key.target_fullname
         for column in (table.c.dog_id, table.c.event_type_id)
@@ -85,6 +90,10 @@ def test_event_model_matches_schema() -> None:
     assert table.c.occurred_at.nullable is False
     assert table.c.memo.nullable is True
     assert foreign_key_targets == {"dogs.dog_id", "event_types.event_type_id"}
+    assert indexes == {
+        "ix_events_dog_id_occurred_at": {"dog_id", "occurred_at"},
+        "ix_events_event_type_id": {"event_type_id"},
+    }
 
 
 def test_walk_event_model_matches_schema() -> None:

@@ -557,12 +557,12 @@ describe('DogListView', () => {
     expect(within(dialog).getByLabelText('イベントの種類')).toBeTruthy()
     expect(within(dialog).getByLabelText('日時')).toBeTruthy()
     expect(within(dialog).getByLabelText('距離 (km)')).toBeTruthy()
-    expect((within(dialog).getByLabelText('距離 (km)') as HTMLInputElement).value).toBe('0')
+    expect((within(dialog).getByLabelText('距離 (km)') as HTMLInputElement).value).toBe('')
     expect(within(dialog).getByLabelText('距離 (km)').getAttribute('max')).toBe('10')
     expect(within(dialog).getByText('時間')).toBeTruthy()
-    expect((within(dialog).getByLabelText('時間の時') as HTMLInputElement).value).toBe('0')
+    expect((within(dialog).getByLabelText('時間の時') as HTMLInputElement).value).toBe('')
     expect(within(dialog).getByLabelText('時間の時').getAttribute('max')).toBe('23')
-    expect((within(dialog).getByLabelText('時間の分') as HTMLInputElement).value).toBe('0')
+    expect((within(dialog).getByLabelText('時間の分') as HTMLInputElement).value).toBe('')
     expect(within(dialog).getByLabelText('時間の分').getAttribute('max')).toBe('59')
     expect(
       within(dialog).getByText('散歩の詳細').compareDocumentPosition(within(dialog).getByLabelText('メモ')) &
@@ -711,7 +711,7 @@ describe('DogListView', () => {
     expect(within(dialog).queryByLabelText('時間の分')).toBeNull()
     expect(within(dialog).getByLabelText('メニュー')).toBeTruthy()
     expect(within(dialog).getByLabelText('量 (g)')).toBeTruthy()
-    expect((within(dialog).getByLabelText('量 (g)') as HTMLInputElement).value).toBe('0')
+    expect((within(dialog).getByLabelText('量 (g)') as HTMLInputElement).value).toBe('')
     expect(within(dialog).getByLabelText('量 (g)').getAttribute('max')).toBe('1000')
 
     await user.clear(within(dialog).getByLabelText('日時'))
@@ -1015,6 +1015,104 @@ describe('DogListView', () => {
     ).toBeTruthy()
     expect(within(dialog).getByText('メモ: 朝の散歩')).toBeTruthy()
     expect(within(dialog).getByText('距離: 1.5km / 時間: 30分')).toBeTruthy()
+  })
+
+  it('今日のイベント取得が重なっても選択中の犬の結果だけを表示する', async () => {
+    setLoggedInOwner()
+    const today = formatLocalDate(new Date())
+    let resolvePochiEvents: (response: Response) => void = () => {}
+    const pochiEventsResponse = new Promise<Response>((resolve) => {
+      resolvePochiEvents = resolve
+    })
+    const fetchMock = vi.fn((url: string) => {
+      if (url.includes('/events?dog_id=dog-1')) {
+        return pochiEventsResponse
+      }
+
+      if (url.includes('/events?dog_id=dog-2')) {
+        return Promise.resolve(
+          jsonResponse({
+            events: [
+              {
+                event_id: 'event-2',
+                dog_id: 'dog-2',
+                event_type: {
+                  event_type_id: 'event-type-2',
+                  code: 'food',
+                  display_name: 'ご飯',
+                },
+                occurred_at: `${today}T18:00:00+09:00`,
+                memo: 'Hanaのご飯',
+                detail: {
+                  menu: 'ドライフード',
+                  amount_grams: 80,
+                },
+              },
+            ],
+          }),
+        )
+      }
+
+      return Promise.resolve(
+        jsonResponse({
+          owner_id: 'owner-1',
+          owner_name: 'Hanako',
+          dogs: [
+            {
+              dog_id: 'dog-1',
+              name: 'Pochi',
+              birthday: '2020-01-01',
+              gender: 'male',
+            },
+            {
+              dog_id: 'dog-2',
+              name: 'Hana',
+              birthday: '2021-02-03',
+              gender: 'female',
+            },
+          ],
+        }),
+      )
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const user = userEvent.setup()
+    render(DogListView)
+    const todayEventButtons = await screen.findAllByRole('button', { name: '今日のイベント' })
+
+    await user.click(todayEventButtons[0])
+    await user.click(todayEventButtons[1])
+
+    const dialog = await screen.findByRole('dialog', { name: 'Hanaの今日のイベント' })
+    expect(await within(dialog).findByText('メモ: Hanaのご飯')).toBeTruthy()
+
+    resolvePochiEvents(
+      jsonResponse({
+        events: [
+          {
+            event_id: 'event-1',
+            dog_id: 'dog-1',
+            event_type: {
+              event_type_id: 'event-type-1',
+              code: 'walk',
+              display_name: '散歩',
+            },
+            occurred_at: `${today}T09:15:00+09:00`,
+            memo: 'Pochiの古い結果',
+            detail: {
+              distance_km: 1.5,
+              duration_minutes: 30,
+            },
+          },
+        ],
+      }),
+    )
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3))
+    await Promise.resolve()
+    await Promise.resolve()
+    expect(screen.queryByText('メモ: Pochiの古い結果')).toBeNull()
+    expect(screen.getByRole('dialog', { name: 'Hanaの今日のイベント' })).toBeTruthy()
   })
 
   it('今日のイベントが0件の場合はempty stateを表示する', async () => {

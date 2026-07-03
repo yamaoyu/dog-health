@@ -4,7 +4,7 @@ import uuid
 from datetime import date, datetime
 from decimal import Decimal
 
-from sqlalchemy import Boolean, CheckConstraint, Date, DateTime, ForeignKey, Integer, Numeric, String, Text, UniqueConstraint, text
+from sqlalchemy import Boolean, CheckConstraint, Date, DateTime, ForeignKey, Index, Integer, Numeric, String, Text, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -91,6 +91,10 @@ class EventType(Base):
 
 class Event(Base):
     __tablename__ = "events"
+    __table_args__ = (
+        Index("ix_events_dog_id_occurred_at", "dog_id", "occurred_at"),
+        Index("ix_events_event_type_id", "event_type_id"),
+    )
 
     event_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),

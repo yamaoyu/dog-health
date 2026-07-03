@@ -20,6 +20,10 @@ class EventTypeNotFoundError(Exception):
     pass
 
 
+class EventDetailRepositoryNotFoundError(Exception):
+    pass
+
+
 class DetailRepository(Protocol):
     def create(self, db_session: Session, event_id: UUID, detail: dict[str, EventDetailValue]) -> None:
         pass
@@ -98,11 +102,14 @@ def build_event_detail(event: Event) -> dict[str, EventDetailValue]:
             "amount_grams": food_event.amount_grams if food_event is not None else None,
         }
 
-    toilet_event = event.toilet_event
-    return {
-        "type": toilet_event.type if toilet_event is not None else None,
-        "condition": toilet_event.condition if toilet_event is not None else None,
-    }
+    if event_type_code == "toilet":
+        toilet_event = event.toilet_event
+        return {
+            "type": toilet_event.type if toilet_event is not None else None,
+            "condition": toilet_event.condition if toilet_event is not None else None,
+        }
+
+    raise EventDetailRepositoryNotFoundError
 
 
 class EventRepository:
@@ -130,14 +137,17 @@ class EventRepository:
             db_session.add(event)
             db_session.flush()
 
-            detail_repository = EVENT_DETAIL_REPOSITORIES[payload.event_type_code]
+            detail_repository = EVENT_DETAIL_REPOSITORIES.get(payload.event_type_code)
+            if detail_repository is None:
+                raise EventDetailRepositoryNotFoundError
+
             detail_repository.create(db_session, event.event_id, payload.detail)
 
             db_session.commit()
-            db_session.refresh(event)
         except Exception:
             db_session.rollback()
             raise
+        db_session.refresh(event)
 
         return CreatedEvent(
             event=event,

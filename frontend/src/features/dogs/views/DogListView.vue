@@ -57,7 +57,10 @@ const isUpdateModalOpen = computed(() => selectedDog.value !== null)
 const isAddOwnerModalOpen = computed(() => selectedAddOwnerDog.value !== null)
 const isEventModalOpen = computed(() => selectedEventDog.value !== null)
 const isTodayEventsModalOpen = computed(() => selectedTodayEventsDog.value !== null)
-const todayDate = computed(() => formatLocalDate(new Date()))
+
+function getTodayDate(): string {
+  return formatLocalDate(new Date())
+}
 
 async function loadDogs(): Promise<void> {
   if (!owner.value) {
@@ -171,14 +174,22 @@ async function openTodayEventsModal(dog: OwnerDog): Promise<void> {
     const response = await fetchEvents({
       dog_id: dog.dog_id,
       period: 'day',
-      date: todayDate.value,
+      date: getTodayDate(),
     })
+    if (selectedTodayEventsDog.value?.dog_id !== dog.dog_id) {
+      return
+    }
     todayEvents.value = response.events
   } catch (error) {
+    if (selectedTodayEventsDog.value?.dog_id !== dog.dog_id) {
+      return
+    }
     todayEvents.value = []
     todayEventsErrorMessage.value = toErrorMessage(error, '今日のイベント取得に失敗しました。')
   } finally {
-    isLoadingTodayEvents.value = false
+    if (selectedTodayEventsDog.value?.dog_id === dog.dog_id) {
+      isLoadingTodayEvents.value = false
+    }
   }
 }
 
@@ -601,7 +612,7 @@ onBeforeUnmount(() => {
             <h3 id="today-events-title">
               {{ selectedTodayEventsDog?.name }}の今日のイベント
             </h3>
-            <p class="meta-copy">{{ formatDisplayDate(todayDate) }}</p>
+            <p class="meta-copy">{{ formatDisplayDate(getTodayDate()) }}</p>
           </div>
           <button class="ghost-button modal-close-button" type="button" @click="closeTodayEventsModal">
             閉じる
