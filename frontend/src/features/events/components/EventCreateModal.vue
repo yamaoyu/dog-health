@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { toErrorMessage } from '../../../lib/api'
+import { formatDatetimeLocalValue, toJapanTimeISOString } from '../eventDisplay'
 import {
   createEvent,
   type EventTypeCode,
@@ -23,10 +24,11 @@ const props = defineProps<{
 const emit = defineEmits<{
   close: []
   created: [dogName: string]
+  submitting: [isSubmitting: boolean]
 }>()
 
 const eventType = ref<EventTypeCode>('walk')
-const occurredAt = ref(toDatetimeLocalValue(new Date()))
+const occurredAt = ref(formatDatetimeLocalValue(new Date()))
 const memo = ref('')
 const walkDistance = ref('')
 const walkHours = ref('')
@@ -49,15 +51,6 @@ const eventTypeLabel = computed(() => {
 
   return 'トイレ'
 })
-
-function toDatetimeLocalValue(date: Date): string {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  const hours = String(date.getHours()).padStart(2, '0')
-  const minutes = String(date.getMinutes()).padStart(2, '0')
-  return `${year}-${month}-${day}T${hours}:${minutes}`
-}
 
 function optionalText(value: string): string | null {
   const normalizedValue = value.trim()
@@ -155,11 +148,12 @@ async function submitEvent(): Promise<void> {
   }
 
   isSubmitting.value = true
+  emit('submitting', true)
   try {
     await createEvent({
       dog_id: props.dog.dog_id,
       event_type_code: eventType.value,
-      occurred_at: new Date(occurredAt.value).toISOString(),
+      occurred_at: toJapanTimeISOString(occurredAt.value),
       memo: optionalText(memo.value),
       detail: buildDetail(),
     })
@@ -168,6 +162,7 @@ async function submitEvent(): Promise<void> {
     errorMessage.value = toErrorMessage(error, 'イベント登録に失敗しました。')
   } finally {
     isSubmitting.value = false
+    emit('submitting', false)
   }
 }
 </script>

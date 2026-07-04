@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { clearCurrentOwner, setCurrentOwner } from '../../auth/session'
+import { formatLocalDate } from '../../events/eventDisplay'
 import EventListView from '../../events/views/EventListView.vue'
 import DogListView from './DogListView.vue'
 
@@ -21,14 +22,6 @@ function setLoggedInOwner(): void {
     name: 'Hanako',
     login_id: 'hanako',
   })
-}
-
-function formatLocalDate(date: Date): string {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-
-  return `${year}-${month}-${day}`
 }
 
 describe('DogListView', () => {
@@ -647,7 +640,7 @@ describe('DogListView', () => {
     expect(requestBody).toEqual({
       dog_id: 'dog-1',
       event_type_code: 'walk',
-      occurred_at: new Date('2026-06-27T21:00').toISOString(),
+      occurred_at: '2026-06-27T12:00:00.000Z',
       memo: '夕方の散歩',
       detail: {
         distance_km: 2.0,
@@ -725,7 +718,7 @@ describe('DogListView', () => {
     expect(requestBody).toEqual({
       dog_id: 'dog-1',
       event_type_code: 'food',
-      occurred_at: new Date('2026-06-27T08:00').toISOString(),
+      occurred_at: '2026-06-26T23:00:00.000Z',
       memo: null,
       detail: {
         menu: 'ドライフード',
@@ -826,7 +819,7 @@ describe('DogListView', () => {
     expect(requestBody).toEqual({
       dog_id: 'dog-1',
       event_type_code: 'toilet',
-      occurred_at: new Date('2026-06-27T09:00').toISOString(),
+      occurred_at: '2026-06-27T00:00:00.000Z',
       memo: null,
       detail: {
         type: 'うんち',

@@ -32,6 +32,7 @@ const eventTypeFilter = ref<EventTypeFilter>('all')
 const events = ref<EventResponse[]>([])
 const isLoading = ref(false)
 const errorMessage = ref('')
+let eventListRequestId = 0
 
 const groupedEvents = computed(() => {
   if (period.value === 'week') {
@@ -51,17 +52,15 @@ const pageTitle = computed(() => {
     return `${formatDisplayDate(firstDay)} - ${formatDisplayDate(lastDay)}`
   }
 
-  const date = new Date(`${currentDate.value}T00:00:00`)
-  return `${date.getFullYear()}年${date.getMonth() + 1}月`
+  const { year, month } = parseDateKey(currentDate.value)
+  return `${year}年${month}月`
 })
 
 const weekDates = computed(() => {
-  const start = getWeekStart(new Date(`${currentDate.value}T00:00:00`))
+  const start = getWeekStartDateKey(currentDate.value)
 
   return Array.from({ length: 7 }, (_, index) => {
-    const date = new Date(start)
-    date.setDate(start.getDate() + index)
-    return formatLocalDate(date)
+    return addDaysToDateKey(start, index)
   })
 })
 
@@ -77,12 +76,33 @@ function normalizeDate(value: unknown): string {
   return formatLocalDate(new Date())
 }
 
-function getWeekStart(date: Date): Date {
-  const start = new Date(date)
-  const day = start.getDay()
-  const diff = day === 0 ? -6 : 1 - day
-  start.setDate(start.getDate() + diff)
-  return start
+function toDateKey(year: number, month: number, day: number): string {
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+}
+
+function parseDateKey(value: string): { year: number; month: number; day: number } {
+  const [year, month, day] = value.split('-').map(Number)
+  return { year, month, day }
+}
+
+function addDaysToDateKey(value: string, amount: number): string {
+  const { year, month, day } = parseDateKey(value)
+  const date = new Date(Date.UTC(year, month - 1, day + amount))
+  return toDateKey(date.getUTCFullYear(), date.getUTCMonth() + 1, date.getUTCDate())
+}
+
+function addMonthsToDateKey(value: string, amount: number): string {
+  const { year, month } = parseDateKey(value)
+  const date = new Date(Date.UTC(year, month - 1 + amount, 1))
+  return toDateKey(date.getUTCFullYear(), date.getUTCMonth() + 1, date.getUTCDate())
+}
+
+function getWeekStartDateKey(value: string): string {
+  const { year, month, day } = parseDateKey(value)
+  const date = new Date(Date.UTC(year, month - 1, day))
+  const weekday = date.getUTCDay()
+  const diff = weekday === 0 ? -6 : 1 - weekday
+  return addDaysToDateKey(value, diff)
 }
 
 function setPeriod(nextPeriod: EventPeriod): void {
@@ -90,18 +110,17 @@ function setPeriod(nextPeriod: EventPeriod): void {
 }
 
 function movePeriod(amount: number): void {
-  const nextDate = new Date(`${currentDate.value}T00:00:00`)
-
   if (period.value === 'month') {
-    nextDate.setMonth(nextDate.getMonth() + amount)
-  } else {
-    nextDate.setDate(nextDate.getDate() + amount * 7)
+    currentDate.value = addMonthsToDateKey(currentDate.value, amount)
+    return
   }
 
-  currentDate.value = formatLocalDate(nextDate)
+  currentDate.value = addDaysToDateKey(currentDate.value, amount * 7)
 }
 
 async function loadEvents(): Promise<void> {
+  const requestId = ++eventListRequestId
+
   if (!dogId.value) {
     return
   }
@@ -116,16 +135,24 @@ async function loadEvents(): Promise<void> {
       date: currentDate.value,
       event_type_code: eventTypeFilter.value === 'all' ? undefined : eventTypeFilter.value,
     })
+    if (requestId !== eventListRequestId) {
+      return
+    }
     events.value = response.events
   } catch (error) {
+    if (requestId !== eventListRequestId) {
+      return
+    }
     events.value = []
     errorMessage.value = toErrorMessage(error, 'イベント一覧の取得に失敗しました。')
   } finally {
-    isLoading.value = false
+    if (requestId === eventListRequestId) {
+      isLoading.value = false
+    }
   }
 }
 
-watch([period, currentDate, eventTypeFilter], () => {
+watch([dogId, period, currentDate, eventTypeFilter], () => {
   void loadEvents()
 }, { immediate: true })
 </script>

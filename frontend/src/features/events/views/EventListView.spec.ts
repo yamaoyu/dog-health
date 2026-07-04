@@ -2,6 +2,7 @@ import { render, screen, waitFor, within } from '@testing-library/vue'
 import userEvent from '@testing-library/user-event'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { describe, expect, it, vi } from 'vitest'
+import { formatLocalDate } from '../eventDisplay'
 import EventListView from './EventListView.vue'
 
 function jsonResponse(payload: unknown, status = 200): Response {
@@ -11,14 +12,6 @@ function jsonResponse(payload: unknown, status = 200): Response {
       'Content-Type': 'application/json',
     },
   })
-}
-
-function formatLocalDate(date: Date): string {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-
-  return `${year}-${month}-${day}`
 }
 
 async function renderEventList(initialPath = '/dogs/dog-1/events?date=today') {
@@ -65,6 +58,38 @@ describe('EventListView', () => {
     )
   })
 
+  it('同じ画面内で犬IDが変わるとイベントAPIを再取得する', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ events: [] }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [{ path: '/dogs/:dogId/events', name: 'dog-events', component: EventListView }],
+    })
+    await router.push('/dogs/dog-1/events?period=week&date=2026-07-03&dog_name=Pochi')
+    await router.isReady()
+
+    render(EventListView, {
+      global: {
+        plugins: [router],
+      },
+    })
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
+
+    await router.push('/dogs/dog-2/events?period=week&date=2026-07-03&dog_name=Hana')
+
+    expect(await screen.findByRole('heading', { name: 'Hanaのイベント' })).toBeTruthy()
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'http://localhost:8010/events?dog_id=dog-2&period=week&date=2026-07-03',
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      },
+    )
+  })
+
   it('月/週タブ切り替えでAPI queryのperiodが変わる', async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ events: [] }))
     vi.stubGlobal('fetch', fetchMock)
@@ -86,6 +111,77 @@ describe('EventListView', () => {
     )
   })
 
+  it('古いイベント取得レスポンスが後から返っても現在の一覧を上書きしない', async () => {
+    let resolveMonthEvents: (response: Response) => void = () => {}
+    const monthEventsResponse = new Promise<Response>((resolve) => {
+      resolveMonthEvents = resolve
+    })
+    const fetchMock = vi.fn((url: string) => {
+      if (url.includes('period=month')) {
+        return monthEventsResponse
+      }
+
+      return Promise.resolve(
+        jsonResponse({
+          events: [
+            {
+              event_id: 'event-week',
+              dog_id: 'dog-1',
+              event_type: {
+                event_type_id: 'event-type-1',
+                code: 'walk',
+                display_name: '散歩',
+              },
+              occurred_at: '2026-07-03T09:15:00+09:00',
+              memo: '新しい週の結果',
+              detail: {
+                distance_km: 1.5,
+                duration_minutes: 30,
+              },
+            },
+          ],
+        }),
+      )
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const user = userEvent.setup()
+    await renderEventList('/dogs/dog-1/events?period=month&date=2026-07-03')
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
+
+    await user.click(screen.getByRole('button', { name: '週' }))
+
+    expect(await screen.findByText('メモ: 新しい週の結果')).toBeTruthy()
+
+    resolveMonthEvents(
+      jsonResponse({
+        events: [
+          {
+            event_id: 'event-month',
+            dog_id: 'dog-1',
+            event_type: {
+              event_type_id: 'event-type-2',
+              code: 'food',
+              display_name: 'ご飯',
+            },
+            occurred_at: '2026-07-03T08:00:00+09:00',
+            memo: '古い月の結果',
+            detail: {
+              menu: 'ドライフード',
+              amount_grams: 80,
+            },
+          },
+        ],
+      }),
+    )
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
+    await Promise.resolve()
+    await Promise.resolve()
+    expect(screen.queryByText('メモ: 古い月の結果')).toBeNull()
+    expect(screen.getByText('メモ: 新しい週の結果')).toBeTruthy()
+  })
+
   it('前月/翌月と前週/翌週ボタンでdateが変わる', async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ events: [] }))
     vi.stubGlobal('fetch', fetchMock)
@@ -97,13 +193,13 @@ describe('EventListView', () => {
     await user.click(screen.getByRole('button', { name: '前月' }))
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
     expect(fetchMock.mock.calls[1][0]).toBe(
-      'http://localhost:8010/events?dog_id=dog-1&period=month&date=2026-06-03',
+      'http://localhost:8010/events?dog_id=dog-1&period=month&date=2026-06-01',
     )
 
     await user.click(screen.getByRole('button', { name: '翌月' }))
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3))
     expect(fetchMock.mock.calls[2][0]).toBe(
-      'http://localhost:8010/events?dog_id=dog-1&period=month&date=2026-07-03',
+      'http://localhost:8010/events?dog_id=dog-1&period=month&date=2026-07-01',
     )
 
     await user.click(screen.getByRole('button', { name: '週' }))
@@ -111,13 +207,29 @@ describe('EventListView', () => {
     await user.click(screen.getByRole('button', { name: '前週' }))
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(5))
     expect(fetchMock.mock.calls[4][0]).toBe(
-      'http://localhost:8010/events?dog_id=dog-1&period=week&date=2026-06-26',
+      'http://localhost:8010/events?dog_id=dog-1&period=week&date=2026-06-24',
     )
 
     await user.click(screen.getByRole('button', { name: '翌週' }))
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(6))
     expect(fetchMock.mock.calls[5][0]).toBe(
-      'http://localhost:8010/events?dog_id=dog-1&period=week&date=2026-07-03',
+      'http://localhost:8010/events?dog_id=dog-1&period=week&date=2026-07-01',
+    )
+  })
+
+  it('月移動は対象月の1日を指定し、月末日からでも翌月を飛ばさない', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ events: [] }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const user = userEvent.setup()
+    await renderEventList('/dogs/dog-1/events?period=month&date=2026-08-31')
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
+
+    await user.click(screen.getByRole('button', { name: '翌月' }))
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
+    expect(fetchMock.mock.calls[1][0]).toBe(
+      'http://localhost:8010/events?dog_id=dog-1&period=month&date=2026-09-01',
     )
   })
 

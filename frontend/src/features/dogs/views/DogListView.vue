@@ -46,6 +46,7 @@ const addOwnerErrorMessage = ref('')
 const addOwnerSuccessMessage = ref('')
 const isAddingOwner = ref(false)
 const selectedEventDog = ref<OwnerDog | null>(null)
+const isSubmittingEvent = ref(false)
 const eventSuccessMessage = ref('')
 const selectedTodayEventsDog = ref<OwnerDog | null>(null)
 const todayEvents = ref<EventResponse[]>([])
@@ -139,6 +140,7 @@ function closeAddOwnerModal(): void {
 function openEventModal(dog: OwnerDog): void {
   openDogMenuId.value = null
   selectedEventDog.value = dog
+  isSubmittingEvent.value = false
   eventSuccessMessage.value = ''
 }
 
@@ -156,11 +158,21 @@ async function openDogEventList(dog: OwnerDog): Promise<void> {
 }
 
 function closeEventModal(): void {
+  if (isSubmittingEvent.value) {
+    return
+  }
+
   selectedEventDog.value = null
+  isSubmittingEvent.value = false
+}
+
+function handleEventSubmitting(isSubmitting: boolean): void {
+  isSubmittingEvent.value = isSubmitting
 }
 
 function handleEventCreated(dogName: string): void {
   selectedEventDog.value = null
+  isSubmittingEvent.value = false
   eventSuccessMessage.value = `${dogName}のイベントを登録しました。`
 }
 
@@ -350,7 +362,7 @@ function handleEscape(event: KeyboardEvent): void {
     return
   }
 
-  if (isEventModalOpen.value) {
+  if (isEventModalOpen.value && !isSubmittingEvent.value) {
     closeEventModal()
     return
   }
@@ -649,6 +661,7 @@ onBeforeUnmount(() => {
       :dog="selectedEventDog"
       @close="closeEventModal"
       @created="handleEventCreated"
+      @submitting="handleEventSubmitting"
     />
   </section>
 </template>

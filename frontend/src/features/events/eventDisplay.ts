@@ -11,16 +11,85 @@ export type EventGroup = {
   events: EventResponse[]
 }
 
+const japanTimeZone = 'Asia/Tokyo'
+const weekdayLabels = ['日', '月', '火', '水', '木', '金', '土']
+
+function parseDateKey(value: string): { year: number; month: number; day: number } | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
+  if (match === null) {
+    return null
+  }
+
+  const [, year, month, day] = match
+  return {
+    year: Number(year),
+    month: Number(month),
+    day: Number(day),
+  }
+}
+
+function getDatePartValue(parts: Intl.DateTimeFormatPart[], type: Intl.DateTimeFormatPartTypes): string {
+  return parts.find((part) => part.type === type)?.value ?? ''
+}
+
+function getAppDateParts(date: Date): Intl.DateTimeFormatPart[] {
+  return new Intl.DateTimeFormat('ja-JP', {
+    timeZone: japanTimeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(date)
+}
+
 export function formatLocalDate(date: Date): string {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
+  const parts = getAppDateParts(date)
+  const year = getDatePartValue(parts, 'year')
+  const month = getDatePartValue(parts, 'month')
+  const day = getDatePartValue(parts, 'day')
 
   return `${year}-${month}-${day}`
 }
 
+export function formatDatetimeLocalValue(date: Date): string {
+  const parts = getAppDateParts(date)
+  const year = getDatePartValue(parts, 'year')
+  const month = getDatePartValue(parts, 'month')
+  const day = getDatePartValue(parts, 'day')
+  const hour = getDatePartValue(parts, 'hour')
+  const minute = getDatePartValue(parts, 'minute')
+
+  return `${year}-${month}-${day}T${hour}:${minute}`
+}
+
+export function toJapanTimeISOString(value: string): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(value)
+  if (match === null) {
+    throw new Error('Invalid datetime-local value')
+  }
+
+  const [, yearValue, monthValue, dayValue, hourValue, minuteValue] = match
+  return new Date(Date.UTC(
+    Number(yearValue),
+    Number(monthValue) - 1,
+    Number(dayValue),
+    Number(hourValue) - 9,
+    Number(minuteValue),
+  )).toISOString()
+}
+
 export function formatDisplayDate(value: string): string {
+  const dateKey = parseDateKey(value)
+  if (dateKey !== null) {
+    const weekday = new Date(Date.UTC(dateKey.year, dateKey.month - 1, dateKey.day)).getUTCDay()
+    return `${dateKey.year}年${dateKey.month}月${dateKey.day}日(${weekdayLabels[weekday]})`
+  }
+
   return new Intl.DateTimeFormat('ja-JP', {
+    timeZone: japanTimeZone,
     year: 'numeric',
     month: 'long',
     day: 'numeric',
@@ -30,6 +99,7 @@ export function formatDisplayDate(value: string): string {
 
 export function formatDisplayTime(value: string): string {
   return new Intl.DateTimeFormat('ja-JP', {
+    timeZone: japanTimeZone,
     hour: '2-digit',
     minute: '2-digit',
   }).format(new Date(value))

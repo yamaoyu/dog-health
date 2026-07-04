@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+from collections.abc import Generator
 from datetime import datetime
 from decimal import Decimal
 from uuid import UUID, uuid4
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.config import Settings, get_settings
@@ -117,6 +119,14 @@ class FakeListEventRepository:
 
 
 client = TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def clear_dependency_overrides() -> Generator[None, None, None]:
+    try:
+        yield
+    finally:
+        app.dependency_overrides.clear()
 
 
 def create_fake_session() -> tuple[FakeSession, UUID]:
