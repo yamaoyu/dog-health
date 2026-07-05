@@ -144,6 +144,7 @@ Examples:
 * Use feature-based directory structure
 * Use Composition API
 * Keep API calls in dedicated service files
+* Show only information intended for users, not for the system.
 
 ---
 

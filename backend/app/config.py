@@ -9,6 +9,7 @@ from urllib.parse import quote_plus
 class Settings:
     app_name: str
     app_env: str
+    app_timezone: str
     frontend_origins: tuple[str, ...]
     db_host: str
     db_port: int
@@ -38,6 +39,7 @@ def get_settings() -> Settings:
     return Settings(
         app_name=os.getenv("APP_NAME", "dog-health-api"),
         app_env=os.getenv("APP_ENV", "development"),
+        app_timezone=os.getenv("APP_TIMEZONE", "Asia/Tokyo"),
         frontend_origins=frontend_origins,
         db_host=os.getenv("POSTGRES_HOST", "db"),
         db_port=int(os.getenv("POSTGRES_PORT", "5432")),

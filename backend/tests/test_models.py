@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from sqlalchemy import CheckConstraint, UniqueConstraint
+from sqlalchemy import CheckConstraint, Index, Integer, Numeric, UniqueConstraint
 
-from app.models import Dog, Owner, OwnerDog
+from app.models import Dog, Event, EventType, FoodEvent, Owner, OwnerDog, ToiletEvent, WalkEvent
 
 
 def test_owner_model_matches_schema() -> None:
@@ -57,3 +57,87 @@ def test_owner_dog_model_matches_schema() -> None:
         "owner_id",
         "dog_id",
     }
+
+
+def test_event_type_model_matches_schema() -> None:
+    table = EventType.__table__
+
+    assert table.name == "event_types"
+    assert table.c.event_type_id.primary_key is True
+    assert table.c.code.nullable is False
+    assert table.c.code.unique is True
+    assert table.c.display_name.nullable is False
+    assert table.c.is_active.nullable is False
+
+
+def test_event_model_matches_schema() -> None:
+    table = Event.__table__
+    indexes = {
+        index.name: {column.name for column in index.columns}
+        for index in table.indexes
+        if isinstance(index, Index)
+    }
+    foreign_key_targets = {
+        foreign_key.target_fullname
+        for column in (table.c.dog_id, table.c.event_type_id)
+        for foreign_key in column.foreign_keys
+    }
+
+    assert table.name == "events"
+    assert table.c.event_id.primary_key is True
+    assert table.c.dog_id.nullable is False
+    assert table.c.event_type_id.nullable is False
+    assert table.c.occurred_at.nullable is False
+    assert table.c.memo.nullable is True
+    assert foreign_key_targets == {"dogs.dog_id", "event_types.event_type_id"}
+    assert indexes == {
+        "ix_events_dog_id_occurred_at": {"dog_id", "occurred_at"},
+        "ix_events_event_type_id": {"event_type_id"},
+    }
+
+
+def test_walk_event_model_matches_schema() -> None:
+    table = WalkEvent.__table__
+    foreign_key_targets = {
+        foreign_key.target_fullname
+        for foreign_key in table.c.event_id.foreign_keys
+    }
+
+    assert table.name == "walk_events"
+    assert table.c.event_id.primary_key is True
+    assert table.c.distance_km.nullable is True
+    assert isinstance(table.c.distance_km.type, Numeric)
+    assert table.c.distance_km.type.precision == 4
+    assert table.c.distance_km.type.scale == 1
+    assert table.c.duration_minutes.nullable is True
+    assert isinstance(table.c.duration_minutes.type, Integer)
+    assert foreign_key_targets == {"events.event_id"}
+
+
+def test_food_event_model_matches_schema() -> None:
+    table = FoodEvent.__table__
+    foreign_key_targets = {
+        foreign_key.target_fullname
+        for foreign_key in table.c.event_id.foreign_keys
+    }
+
+    assert table.name == "food_events"
+    assert table.c.event_id.primary_key is True
+    assert table.c.menu.nullable is True
+    assert table.c.amount_grams.nullable is True
+    assert isinstance(table.c.amount_grams.type, Integer)
+    assert foreign_key_targets == {"events.event_id"}
+
+
+def test_toilet_event_model_matches_schema() -> None:
+    table = ToiletEvent.__table__
+    foreign_key_targets = {
+        foreign_key.target_fullname
+        for foreign_key in table.c.event_id.foreign_keys
+    }
+
+    assert table.name == "toilet_events"
+    assert table.c.event_id.primary_key is True
+    assert table.c.type.nullable is True
+    assert table.c.condition.nullable is True
+    assert foreign_key_targets == {"events.event_id"}

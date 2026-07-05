@@ -3,6 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import App from './App.vue'
 import { getCurrentOwner } from './features/auth/session'
 import DogListView from './features/dogs/views/DogListView.vue'
+import EventListView from './features/events/views/EventListView.vue'
 import LoginView from './features/auth/views/LoginView.vue'
 import OwnerRegistrationView from './features/owners/views/OwnerRegistrationView.vue'
 import './styles.css'
@@ -28,6 +29,12 @@ const router = createRouter({
       path: '/dogs',
       name: 'dogs',
       component: DogListView,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/dogs/:dogId/events',
+      name: 'dog-events',
+      component: EventListView,
       meta: { requiresAuth: true },
     },
   ],

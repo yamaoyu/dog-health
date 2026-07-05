@@ -1,7 +1,10 @@
 import { render, screen, waitFor, within } from '@testing-library/vue'
 import userEvent from '@testing-library/user-event'
+import { createMemoryHistory, createRouter } from 'vue-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { clearCurrentOwner, setCurrentOwner } from '../../auth/session'
+import { formatLocalDate } from '../../events/eventDisplay'
+import EventListView from '../../events/views/EventListView.vue'
 import DogListView from './DogListView.vue'
 
 function jsonResponse(payload: unknown, status = 200): Response {
@@ -512,5 +515,664 @@ describe('DogListView', () => {
 
     expect(await within(dialog).findByText('既に紐づけられています')).toBeTruthy()
     expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('犬メニューからイベント作成モーダルを開ける', async () => {
+    setLoggedInOwner()
+    const fetchMock = vi.fn().mockResolvedValue(
+      jsonResponse({
+        owner_id: 'owner-1',
+        owner_name: 'Hanako',
+        dogs: [
+          {
+            dog_id: 'dog-1',
+            name: 'Pochi',
+            birthday: '2020-01-01',
+            gender: 'male',
+          },
+        ],
+      }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const user = userEvent.setup()
+    render(DogListView)
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
+
+    await user.click(await screen.findByRole('button', { name: 'Pochiのメニュー' }))
+
+    expect(screen.getByRole('menuitem', { name: 'イベント作成' })).toBeTruthy()
+
+    await user.click(screen.getByRole('menuitem', { name: 'イベント作成' }))
+
+    const dialog = screen.getByRole('dialog', { name: 'イベント作成' })
+    expect(within(dialog).getByText('Pochiのイベントを登録します。')).toBeTruthy()
+    expect(within(dialog).getByLabelText('イベントの種類')).toBeTruthy()
+    expect(within(dialog).getByLabelText('日時')).toBeTruthy()
+    expect(within(dialog).getByLabelText('距離 (km)')).toBeTruthy()
+    expect((within(dialog).getByLabelText('距離 (km)') as HTMLInputElement).value).toBe('')
+    expect(within(dialog).getByLabelText('距離 (km)').getAttribute('max')).toBe('10')
+    expect(within(dialog).getByText('時間')).toBeTruthy()
+    expect((within(dialog).getByLabelText('時間の時') as HTMLInputElement).value).toBe('')
+    expect(within(dialog).getByLabelText('時間の時').getAttribute('max')).toBe('23')
+    expect((within(dialog).getByLabelText('時間の分') as HTMLInputElement).value).toBe('')
+    expect(within(dialog).getByLabelText('時間の分').getAttribute('max')).toBe('59')
+    expect(
+      within(dialog).getByText('散歩の詳細').compareDocumentPosition(within(dialog).getByLabelText('メモ')) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+    expect(
+      within(dialog).getByText('散歩の詳細').compareDocumentPosition(within(dialog).getByLabelText('日時')) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+    expect(
+      within(dialog).getByLabelText('日時').compareDocumentPosition(within(dialog).getByLabelText('メモ')) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+  })
+
+  it('散歩イベントを入力して送信するとイベント作成APIが呼ばれる', async () => {
+    setLoggedInOwner()
+    const fetchMock = vi.fn((url: string, init?: RequestInit) => {
+      if (url.endsWith('/events') && init?.method === 'POST') {
+        return Promise.resolve(
+          jsonResponse({
+            event_id: 'event-1',
+            dog_id: 'dog-1',
+            event_type: {
+              event_type_id: 'event-type-1',
+              code: 'walk',
+              display_name: '散歩',
+            },
+            occurred_at: '2026-06-27T12:00:00Z',
+            memo: '夕方の散歩',
+            detail: {
+              distance_km: 2.0,
+              duration_minutes: 90,
+            },
+          }),
+        )
+      }
+
+      return Promise.resolve(
+        jsonResponse({
+          owner_id: 'owner-1',
+          owner_name: 'Hanako',
+          dogs: [
+            {
+              dog_id: 'dog-1',
+              name: 'Pochi',
+              birthday: '2020-01-01',
+              gender: 'male',
+            },
+          ],
+        }),
+      )
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const user = userEvent.setup()
+    render(DogListView)
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
+
+    await user.click(await screen.findByRole('button', { name: 'Pochiのメニュー' }))
+    await user.click(screen.getByRole('menuitem', { name: 'イベント作成' }))
+    const dialog = screen.getByRole('dialog', { name: 'イベント作成' })
+    await user.clear(within(dialog).getByLabelText('日時'))
+    await user.type(within(dialog).getByLabelText('日時'), '2026-06-27T21:00')
+    await user.type(within(dialog).getByLabelText('メモ'), ' 夕方の散歩 ')
+    await user.type(within(dialog).getByLabelText('距離 (km)'), '2')
+    await user.clear(within(dialog).getByLabelText('時間の時'))
+    await user.type(within(dialog).getByLabelText('時間の時'), '1')
+    await user.clear(within(dialog).getByLabelText('時間の分'))
+    await user.type(within(dialog).getByLabelText('時間の分'), '30')
+    await user.click(within(dialog).getByRole('button', { name: 'イベントを登録' }))
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
+    const requestBody = JSON.parse(fetchMock.mock.calls[1][1]?.body as string)
+    expect(fetchMock).toHaveBeenNthCalledWith(2, 'http://localhost:8010/events', {
+      method: 'POST',
+      body: expect.any(String),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+    expect(requestBody).toEqual({
+      dog_id: 'dog-1',
+      event_type_code: 'walk',
+      occurred_at: '2026-06-27T12:00:00.000Z',
+      memo: '夕方の散歩',
+      detail: {
+        distance_km: 2.0,
+        duration_minutes: 90,
+      },
+    })
+    expect(await screen.findByText('Pochiのイベントを登録しました。')).toBeTruthy()
+  })
+
+  it('イベント種別をご飯に変更すると詳細欄とpayloadが切り替わる', async () => {
+    setLoggedInOwner()
+    const fetchMock = vi.fn((url: string, init?: RequestInit) => {
+      if (url.endsWith('/events') && init?.method === 'POST') {
+        return Promise.resolve(
+          jsonResponse({
+            event_id: 'event-1',
+            dog_id: 'dog-1',
+            event_type: {
+              event_type_id: 'event-type-2',
+              code: 'food',
+              display_name: 'ご飯',
+            },
+            occurred_at: '2026-06-27T00:00:00Z',
+            memo: null,
+            detail: {
+              menu: 'ドライフード',
+              amount_grams: 80,
+            },
+          }),
+        )
+      }
+
+      return Promise.resolve(
+        jsonResponse({
+          owner_id: 'owner-1',
+          owner_name: 'Hanako',
+          dogs: [
+            {
+              dog_id: 'dog-1',
+              name: 'Pochi',
+              birthday: '2020-01-01',
+              gender: 'male',
+            },
+          ],
+        }),
+      )
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const user = userEvent.setup()
+    render(DogListView)
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
+
+    await user.click(await screen.findByRole('button', { name: 'Pochiのメニュー' }))
+    await user.click(screen.getByRole('menuitem', { name: 'イベント作成' }))
+    const dialog = screen.getByRole('dialog', { name: 'イベント作成' })
+    await user.selectOptions(within(dialog).getByLabelText('イベントの種類'), 'food')
+
+    expect(within(dialog).queryByLabelText('距離 (km)')).toBeNull()
+    expect(within(dialog).queryByLabelText('時間の時')).toBeNull()
+    expect(within(dialog).queryByLabelText('時間の分')).toBeNull()
+    expect(within(dialog).getByLabelText('メニュー')).toBeTruthy()
+    expect(within(dialog).getByLabelText('量 (g)')).toBeTruthy()
+    expect((within(dialog).getByLabelText('量 (g)') as HTMLInputElement).value).toBe('')
+    expect(within(dialog).getByLabelText('量 (g)').getAttribute('max')).toBe('1000')
+
+    await user.clear(within(dialog).getByLabelText('日時'))
+    await user.type(within(dialog).getByLabelText('日時'), '2026-06-27T08:00')
+    await user.type(within(dialog).getByLabelText('メニュー'), ' ドライフード ')
+    await user.type(within(dialog).getByLabelText('量 (g)'), '80')
+    await user.click(within(dialog).getByRole('button', { name: 'イベントを登録' }))
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
+    const requestBody = JSON.parse(fetchMock.mock.calls[1][1]?.body as string)
+    expect(requestBody).toEqual({
+      dog_id: 'dog-1',
+      event_type_code: 'food',
+      occurred_at: '2026-06-26T23:00:00.000Z',
+      memo: null,
+      detail: {
+        menu: 'ドライフード',
+        amount_grams: 80,
+      },
+    })
+  })
+
+  it('イベント種別をトイレに変更するとトイレ用の詳細欄を表示する', async () => {
+    setLoggedInOwner()
+    const fetchMock = vi.fn().mockResolvedValue(
+      jsonResponse({
+        owner_id: 'owner-1',
+        owner_name: 'Hanako',
+        dogs: [
+          {
+            dog_id: 'dog-1',
+            name: 'Pochi',
+            birthday: '2020-01-01',
+            gender: 'male',
+          },
+        ],
+      }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const user = userEvent.setup()
+    render(DogListView)
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
+
+    await user.click(await screen.findByRole('button', { name: 'Pochiのメニュー' }))
+    await user.click(screen.getByRole('menuitem', { name: 'イベント作成' }))
+    const dialog = screen.getByRole('dialog', { name: 'イベント作成' })
+    await user.selectOptions(within(dialog).getByLabelText('イベントの種類'), 'toilet')
+
+    expect(within(dialog).queryByLabelText('距離 (km)')).toBeNull()
+    expect(within(dialog).queryByLabelText('メニュー')).toBeNull()
+    expect(within(dialog).getByLabelText('種類')).toBeTruthy()
+    expect(within(dialog).getByLabelText('状態')).toBeTruthy()
+  })
+
+  it('トイレイベントを選択して送信すると選択した種類と状態がpayloadに入る', async () => {
+    setLoggedInOwner()
+    const fetchMock = vi.fn((url: string, init?: RequestInit) => {
+      if (url.endsWith('/events') && init?.method === 'POST') {
+        return Promise.resolve(
+          jsonResponse({
+            event_id: 'event-1',
+            dog_id: 'dog-1',
+            event_type: {
+              event_type_id: 'event-type-3',
+              code: 'toilet',
+              display_name: 'トイレ',
+            },
+            occurred_at: '2026-06-27T00:00:00Z',
+            memo: null,
+            detail: {
+              type: 'うんち',
+              condition: '気になる',
+            },
+          }),
+        )
+      }
+
+      return Promise.resolve(
+        jsonResponse({
+          owner_id: 'owner-1',
+          owner_name: 'Hanako',
+          dogs: [
+            {
+              dog_id: 'dog-1',
+              name: 'Pochi',
+              birthday: '2020-01-01',
+              gender: 'male',
+            },
+          ],
+        }),
+      )
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const user = userEvent.setup()
+    render(DogListView)
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
+
+    await user.click(await screen.findByRole('button', { name: 'Pochiのメニュー' }))
+    await user.click(screen.getByRole('menuitem', { name: 'イベント作成' }))
+    const dialog = screen.getByRole('dialog', { name: 'イベント作成' })
+    await user.selectOptions(within(dialog).getByLabelText('イベントの種類'), 'toilet')
+    await user.selectOptions(within(dialog).getByLabelText('種類'), 'うんち')
+    await user.selectOptions(within(dialog).getByLabelText('状態'), '気になる')
+    await user.clear(within(dialog).getByLabelText('日時'))
+    await user.type(within(dialog).getByLabelText('日時'), '2026-06-27T09:00')
+    await user.click(within(dialog).getByRole('button', { name: 'イベントを登録' }))
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
+    const requestBody = JSON.parse(fetchMock.mock.calls[1][1]?.body as string)
+    expect(requestBody).toEqual({
+      dog_id: 'dog-1',
+      event_type_code: 'toilet',
+      occurred_at: '2026-06-27T00:00:00.000Z',
+      memo: null,
+      detail: {
+        type: 'うんち',
+        condition: '気になる',
+      },
+    })
+  })
+
+  it('イベント作成フォームで日時が未入力の場合はイベント作成APIを呼ばない', async () => {
+    setLoggedInOwner()
+    const fetchMock = vi.fn().mockResolvedValue(
+      jsonResponse({
+        owner_id: 'owner-1',
+        owner_name: 'Hanako',
+        dogs: [
+          {
+            dog_id: 'dog-1',
+            name: 'Pochi',
+            birthday: '2020-01-01',
+            gender: 'male',
+          },
+        ],
+      }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const user = userEvent.setup()
+    render(DogListView)
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
+
+    await user.click(await screen.findByRole('button', { name: 'Pochiのメニュー' }))
+    await user.click(screen.getByRole('menuitem', { name: 'イベント作成' }))
+    const dialog = screen.getByRole('dialog', { name: 'イベント作成' })
+    await user.clear(within(dialog).getByLabelText('日時'))
+    await user.click(within(dialog).getByRole('button', { name: 'イベントを登録' }))
+
+    expect(await within(dialog).findByText('日時は必須です。')).toBeTruthy()
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('イベント作成APIのエラーをフォーム内に表示する', async () => {
+    setLoggedInOwner()
+    const fetchMock = vi.fn((url: string, init?: RequestInit) => {
+      if (url.endsWith('/events') && init?.method === 'POST') {
+        return Promise.resolve(jsonResponse({ detail: 'イベント種別が見つかりません' }, 404))
+      }
+
+      return Promise.resolve(
+        jsonResponse({
+          owner_id: 'owner-1',
+          owner_name: 'Hanako',
+          dogs: [
+            {
+              dog_id: 'dog-1',
+              name: 'Pochi',
+              birthday: '2020-01-01',
+              gender: 'male',
+            },
+          ],
+        }),
+      )
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const user = userEvent.setup()
+    render(DogListView)
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
+
+    await user.click(await screen.findByRole('button', { name: 'Pochiのメニュー' }))
+    await user.click(screen.getByRole('menuitem', { name: 'イベント作成' }))
+    const dialog = screen.getByRole('dialog', { name: 'イベント作成' })
+    await user.click(within(dialog).getByRole('button', { name: 'イベントを登録' }))
+
+    expect(await within(dialog).findByText('イベント種別が見つかりません')).toBeTruthy()
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('犬メニューからイベント一覧をクリックすると対象犬のイベントページへ遷移する', async () => {
+    setLoggedInOwner()
+    const fetchMock = vi.fn().mockResolvedValue(
+      jsonResponse({
+        owner_id: 'owner-1',
+        owner_name: 'Hanako',
+        dogs: [
+          {
+            dog_id: 'dog-1',
+            name: 'Pochi',
+            birthday: '2020-01-01',
+            gender: 'male',
+          },
+        ],
+      }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/dogs', name: 'dogs', component: DogListView },
+        { path: '/dogs/:dogId/events', name: 'dog-events', component: EventListView },
+      ],
+    })
+    await router.push('/dogs')
+    await router.isReady()
+
+    const user = userEvent.setup()
+    render(DogListView, {
+      global: {
+        plugins: [router],
+      },
+    })
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
+
+    await user.click(await screen.findByRole('button', { name: 'Pochiのメニュー' }))
+    await user.click(screen.getByRole('menuitem', { name: 'イベント一覧' }))
+
+    await waitFor(() => {
+      expect(router.currentRoute.value.fullPath).toBe('/dogs/dog-1/events?period=week&date=today&dog_name=Pochi')
+    })
+  })
+
+  it('犬カードに今日のイベント欄を表示し、クリックするとday APIの結果をモーダルに表示する', async () => {
+    setLoggedInOwner()
+    const today = formatLocalDate(new Date())
+    const fetchMock = vi.fn((url: string) => {
+      if (url.includes('/events?')) {
+        return Promise.resolve(
+          jsonResponse({
+            events: [
+              {
+                event_id: 'event-1',
+                dog_id: 'dog-1',
+                event_type: {
+                  event_type_id: 'event-type-1',
+                  code: 'walk',
+                  display_name: '散歩',
+                },
+                occurred_at: `${today}T09:15:00+09:00`,
+                memo: '朝の散歩',
+                detail: {
+                  distance_km: 1.5,
+                  duration_minutes: 30,
+                },
+              },
+            ],
+          }),
+        )
+      }
+
+      return Promise.resolve(
+        jsonResponse({
+          owner_id: 'owner-1',
+          owner_name: 'Hanako',
+          dogs: [
+            {
+              dog_id: 'dog-1',
+              name: 'Pochi',
+              birthday: '2020-01-01',
+              gender: 'male',
+            },
+          ],
+        }),
+      )
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const user = userEvent.setup()
+    render(DogListView)
+    await screen.findByRole('button', { name: '今日のイベント' })
+
+    await user.click(screen.getByRole('button', { name: '今日のイベント' }))
+
+    const dialog = await screen.findByRole('dialog', { name: 'Pochiの今日のイベント' })
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      `http://localhost:8010/events?dog_id=dog-1&period=day&date=${today}`,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      },
+    )
+    expect(within(dialog).getByText('散歩')).toBeTruthy()
+    expect(
+      within(dialog).getByText('散歩').compareDocumentPosition(within(dialog).getByText('09:15')) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+    expect(within(dialog).getByText('メモ: 朝の散歩')).toBeTruthy()
+    expect(within(dialog).getByText('距離: 1.5km / 時間: 30分')).toBeTruthy()
+  })
+
+  it('今日のイベント取得が重なっても選択中の犬の結果だけを表示する', async () => {
+    setLoggedInOwner()
+    const today = formatLocalDate(new Date())
+    let resolvePochiEvents: (response: Response) => void = () => {}
+    const pochiEventsResponse = new Promise<Response>((resolve) => {
+      resolvePochiEvents = resolve
+    })
+    const fetchMock = vi.fn((url: string) => {
+      if (url.includes('/events?dog_id=dog-1')) {
+        return pochiEventsResponse
+      }
+
+      if (url.includes('/events?dog_id=dog-2')) {
+        return Promise.resolve(
+          jsonResponse({
+            events: [
+              {
+                event_id: 'event-2',
+                dog_id: 'dog-2',
+                event_type: {
+                  event_type_id: 'event-type-2',
+                  code: 'food',
+                  display_name: 'ご飯',
+                },
+                occurred_at: `${today}T18:00:00+09:00`,
+                memo: 'Hanaのご飯',
+                detail: {
+                  menu: 'ドライフード',
+                  amount_grams: 80,
+                },
+              },
+            ],
+          }),
+        )
+      }
+
+      return Promise.resolve(
+        jsonResponse({
+          owner_id: 'owner-1',
+          owner_name: 'Hanako',
+          dogs: [
+            {
+              dog_id: 'dog-1',
+              name: 'Pochi',
+              birthday: '2020-01-01',
+              gender: 'male',
+            },
+            {
+              dog_id: 'dog-2',
+              name: 'Hana',
+              birthday: '2021-02-03',
+              gender: 'female',
+            },
+          ],
+        }),
+      )
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const user = userEvent.setup()
+    render(DogListView)
+    const todayEventButtons = await screen.findAllByRole('button', { name: '今日のイベント' })
+
+    await user.click(todayEventButtons[0])
+    await user.click(todayEventButtons[1])
+
+    const dialog = await screen.findByRole('dialog', { name: 'Hanaの今日のイベント' })
+    expect(await within(dialog).findByText('メモ: Hanaのご飯')).toBeTruthy()
+
+    resolvePochiEvents(
+      jsonResponse({
+        events: [
+          {
+            event_id: 'event-1',
+            dog_id: 'dog-1',
+            event_type: {
+              event_type_id: 'event-type-1',
+              code: 'walk',
+              display_name: '散歩',
+            },
+            occurred_at: `${today}T09:15:00+09:00`,
+            memo: 'Pochiの古い結果',
+            detail: {
+              distance_km: 1.5,
+              duration_minutes: 30,
+            },
+          },
+        ],
+      }),
+    )
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3))
+    await Promise.resolve()
+    await Promise.resolve()
+    expect(screen.queryByText('メモ: Pochiの古い結果')).toBeNull()
+    expect(screen.getByRole('dialog', { name: 'Hanaの今日のイベント' })).toBeTruthy()
+  })
+
+  it('今日のイベントが0件の場合はempty stateを表示する', async () => {
+    setLoggedInOwner()
+    const fetchMock = vi.fn((url: string) => {
+      if (url.includes('/events?')) {
+        return Promise.resolve(jsonResponse({ events: [] }))
+      }
+
+      return Promise.resolve(
+        jsonResponse({
+          owner_id: 'owner-1',
+          owner_name: 'Hanako',
+          dogs: [
+            {
+              dog_id: 'dog-1',
+              name: 'Pochi',
+              birthday: '2020-01-01',
+              gender: 'male',
+            },
+          ],
+        }),
+      )
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const user = userEvent.setup()
+    render(DogListView)
+    await screen.findByRole('button', { name: '今日のイベント' })
+
+    await user.click(screen.getByRole('button', { name: '今日のイベント' }))
+
+    const dialog = await screen.findByRole('dialog', { name: 'Pochiの今日のイベント' })
+    expect(await within(dialog).findByText('今日のイベントはありません。')).toBeTruthy()
+  })
+
+  it('今日のイベントAPIエラー時はモーダル内にエラーを表示する', async () => {
+    setLoggedInOwner()
+    const fetchMock = vi.fn((url: string) => {
+      if (url.includes('/events?')) {
+        return Promise.resolve(jsonResponse({ detail: 'イベント取得に失敗しました' }, 500))
+      }
+
+      return Promise.resolve(
+        jsonResponse({
+          owner_id: 'owner-1',
+          owner_name: 'Hanako',
+          dogs: [
+            {
+              dog_id: 'dog-1',
+              name: 'Pochi',
+              birthday: '2020-01-01',
+              gender: 'male',
+            },
+          ],
+        }),
+      )
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const user = userEvent.setup()
+    render(DogListView)
+    await screen.findByRole('button', { name: '今日のイベント' })
+
+    await user.click(screen.getByRole('button', { name: '今日のイベント' }))
+
+    const dialog = await screen.findByRole('dialog', { name: 'Pochiの今日のイベント' })
+    expect(await within(dialog).findByText('イベント取得に失敗しました')).toBeTruthy()
   })
 })

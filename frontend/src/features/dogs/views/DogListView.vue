@@ -1,7 +1,17 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, getCurrentInstance, onBeforeUnmount, onMounted, ref } from 'vue'
+import type { Router } from 'vue-router'
 import { toErrorMessage } from '../../../lib/api'
 import { useCurrentOwner } from '../../auth/session'
+import EventCreateModal from '../../events/components/EventCreateModal.vue'
+import {
+  formatDisplayDate,
+  formatDisplayTime,
+  formatLocalDate,
+  getEventDetailLabels,
+  getEventTypeLabel,
+} from '../../events/eventDisplay'
+import { fetchEvents, type EventResponse } from '../../events/services/eventsApi'
 import {
   addDogOwner,
   createDog,
@@ -13,6 +23,7 @@ import {
 } from '../services/dogsApi'
 
 const owner = useCurrentOwner()
+const router = getCurrentInstance()?.appContext.config.globalProperties.$router as Router | undefined
 const dogsResponse = ref<OwnerDogsResponse | null>(null)
 const errorMessage = ref('')
 const isLoading = ref(true)
@@ -34,10 +45,23 @@ const ownerLoginId = ref('')
 const addOwnerErrorMessage = ref('')
 const addOwnerSuccessMessage = ref('')
 const isAddingOwner = ref(false)
+const selectedEventDog = ref<OwnerDog | null>(null)
+const isSubmittingEvent = ref(false)
+const eventSuccessMessage = ref('')
+const selectedTodayEventsDog = ref<OwnerDog | null>(null)
+const todayEvents = ref<EventResponse[]>([])
+const todayEventsErrorMessage = ref('')
+const isLoadingTodayEvents = ref(false)
 
 const dogCountLabel = computed(() => `${dogsResponse.value?.dogs.length ?? 0}匹`)
 const isUpdateModalOpen = computed(() => selectedDog.value !== null)
 const isAddOwnerModalOpen = computed(() => selectedAddOwnerDog.value !== null)
+const isEventModalOpen = computed(() => selectedEventDog.value !== null)
+const isTodayEventsModalOpen = computed(() => selectedTodayEventsDog.value !== null)
+
+function getTodayDate(): string {
+  return formatLocalDate(new Date())
+}
 
 async function loadDogs(): Promise<void> {
   if (!owner.value) {
@@ -111,6 +135,80 @@ function closeAddOwnerModal(): void {
   selectedAddOwnerDog.value = null
   ownerLoginId.value = ''
   addOwnerErrorMessage.value = ''
+}
+
+function openEventModal(dog: OwnerDog): void {
+  openDogMenuId.value = null
+  selectedEventDog.value = dog
+  isSubmittingEvent.value = false
+  eventSuccessMessage.value = ''
+}
+
+async function openDogEventList(dog: OwnerDog): Promise<void> {
+  openDogMenuId.value = null
+  if (!router) {
+    return
+  }
+
+  await router.push({
+    name: 'dog-events',
+    params: { dogId: dog.dog_id },
+    query: { period: 'week', date: 'today', dog_name: dog.name },
+  })
+}
+
+function closeEventModal(): void {
+  if (isSubmittingEvent.value) {
+    return
+  }
+
+  selectedEventDog.value = null
+  isSubmittingEvent.value = false
+}
+
+function handleEventSubmitting(isSubmitting: boolean): void {
+  isSubmittingEvent.value = isSubmitting
+}
+
+function handleEventCreated(dogName: string): void {
+  selectedEventDog.value = null
+  isSubmittingEvent.value = false
+  eventSuccessMessage.value = `${dogName}のイベントを登録しました。`
+}
+
+async function openTodayEventsModal(dog: OwnerDog): Promise<void> {
+  selectedTodayEventsDog.value = dog
+  todayEvents.value = []
+  todayEventsErrorMessage.value = ''
+  isLoadingTodayEvents.value = true
+
+  try {
+    const response = await fetchEvents({
+      dog_id: dog.dog_id,
+      period: 'day',
+      date: getTodayDate(),
+    })
+    if (selectedTodayEventsDog.value?.dog_id !== dog.dog_id) {
+      return
+    }
+    todayEvents.value = response.events
+  } catch (error) {
+    if (selectedTodayEventsDog.value?.dog_id !== dog.dog_id) {
+      return
+    }
+    todayEvents.value = []
+    todayEventsErrorMessage.value = toErrorMessage(error, '今日のイベント取得に失敗しました。')
+  } finally {
+    if (selectedTodayEventsDog.value?.dog_id === dog.dog_id) {
+      isLoadingTodayEvents.value = false
+    }
+  }
+}
+
+function closeTodayEventsModal(): void {
+  selectedTodayEventsDog.value = null
+  todayEvents.value = []
+  todayEventsErrorMessage.value = ''
 }
 
 function validateDogForm(): string {
@@ -259,6 +357,16 @@ function handleEscape(event: KeyboardEvent): void {
     return
   }
 
+  if (isTodayEventsModalOpen.value) {
+    closeTodayEventsModal()
+    return
+  }
+
+  if (isEventModalOpen.value && !isSubmittingEvent.value) {
+    closeEventModal()
+    return
+  }
+
   if (isAddOwnerModalOpen.value && !isAddingOwner.value) {
     closeAddOwnerModal()
     return
@@ -312,6 +420,7 @@ onBeforeUnmount(() => {
         </div>
       </div>
 
+      <p v-if="eventSuccessMessage" class="success-text">{{ eventSuccessMessage }}</p>
       <p v-if="addOwnerSuccessMessage" class="success-text">{{ addOwnerSuccessMessage }}</p>
       <p v-if="errorMessage" class="error-text">{{ errorMessage }}</p>
 
@@ -344,6 +453,12 @@ onBeforeUnmount(() => {
                 <button class="menu-button" type="button" role="menuitem" @click="openDogUpdateModal(dog)">
                   プロフィール更新
                 </button>
+                <button class="menu-button" type="button" role="menuitem" @click="openEventModal(dog)">
+                  イベント作成
+                </button>
+                <button class="menu-button" type="button" role="menuitem" @click="openDogEventList(dog)">
+                  イベント一覧
+                </button>
                 <button class="menu-button" type="button" role="menuitem" @click="openAddOwnerModal(dog)">
                   飼い主追加
                 </button>
@@ -352,6 +467,9 @@ onBeforeUnmount(() => {
           </div>
           <p class="meta-copy">誕生日: {{ dog.birthday ?? '未登録' }}</p>
           <p class="meta-copy">性別: {{ formatDogGender(dog.gender) }}</p>
+          <button class="today-events-button" type="button" @click="openTodayEventsModal(dog)">
+            今日のイベント
+          </button>
         </li>
       </ul>
 
@@ -498,5 +616,52 @@ onBeforeUnmount(() => {
         </form>
       </section>
     </div>
+
+    <div v-if="isTodayEventsModalOpen" class="modal-backdrop" @click.self="closeTodayEventsModal">
+      <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="today-events-title">
+        <div class="modal-header">
+          <div>
+            <h3 id="today-events-title">
+              {{ selectedTodayEventsDog?.name }}の今日のイベント
+            </h3>
+            <p class="meta-copy">{{ formatDisplayDate(getTodayDate()) }}</p>
+          </div>
+          <button class="ghost-button modal-close-button" type="button" @click="closeTodayEventsModal">
+            閉じる
+          </button>
+        </div>
+
+        <p v-if="todayEventsErrorMessage" class="error-text">{{ todayEventsErrorMessage }}</p>
+
+        <div v-else-if="isLoadingTodayEvents" class="callout">
+          <p class="meta-copy">今日のイベントを読み込んでいます...</p>
+        </div>
+
+        <div v-else-if="todayEvents.length === 0" class="callout">
+          <p class="empty-copy">今日のイベントはありません。</p>
+        </div>
+
+        <ul v-else class="event-list today-event-list">
+          <li v-for="event in todayEvents" :key="event.event_id" class="event-item">
+            <div class="event-item-header">
+              <span class="event-type">
+                {{ event.event_type.display_name || getEventTypeLabel(event.event_type.code) }}
+              </span>
+              <span class="event-time">{{ formatDisplayTime(event.occurred_at) }}</span>
+            </div>
+            <p v-if="event.memo" class="meta-copy">メモ: {{ event.memo }}</p>
+            <p class="meta-copy">{{ getEventDetailLabels(event).join(' / ') }}</p>
+          </li>
+        </ul>
+      </section>
+    </div>
+
+    <EventCreateModal
+      v-if="selectedEventDog"
+      :dog="selectedEventDog"
+      @close="closeEventModal"
+      @created="handleEventCreated"
+      @submitting="handleEventSubmitting"
+    />
   </section>
 </template>
