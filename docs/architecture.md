@@ -1,35 +1,35 @@
-# Architecture
+# アーキテクチャ
 
 ---
 
-# Frontend
+# フロントエンド
 
 * Vue 3
 * TypeScript
 * Composition API
-* Feature-based directory structure
+* feature-based なディレクトリ構成
 
-Example:
+例:
 
 frontend/src/features/dogs
 frontend/src/features/events
 
 ---
 
-# Backend
+# バックエンド
 
 * FastAPI
 * SQLAlchemy
-* Alembic for migrations
+* migration には Alembic を使う
 * REST API
 
 ---
 
-# Database
+# データベース
 
-PostgreSQL is used as the primary database.
+主要な database として PostgreSQL を使う。
 
-Initial tables:
+初期 table:
 
 * owners
 * dogs
@@ -42,48 +42,48 @@ Initial tables:
 
 ---
 
-# Event Design
+# Event 設計
 
-Events use a common `events` table plus event-specific detail tables.
+event は共通の `events` table と、event ごとの詳細 table を使う。
 
-Initial event types:
+初期 event type:
 
 * walk
 * food
 * toilet
 
-Custom event types are out of scope for MVP.
+custom event type は MVP のスコープ外とする。
 
 ---
 
-# Authentication
+# 認証
 
-Authentication is intentionally simplified for MVP.
+MVP では認証を意図的に簡略化する。
 
-Initial implementation:
+初期実装:
 
-* owner selection
-* temporary login without password
+* owner 選択
+* password なしの一時 login
 
-Future plan:
+将来方針:
 
-* JWT authentication
+* JWT 認証
 
 ---
 
-# Development Environment
+# 開発環境
 
-All services run with Docker Compose.
+すべての service は Docker Compose で実行する。
 
-Containers:
+container:
 
 * frontend
 * backend
 * db
 
-# Directory structure
+# ディレクトリ構成
 ## backend
-Repository layers are introduced only where DB branching would make routers too large.
+DB 分岐によって router が大きくなりすぎる場合に限り、repository layer を導入する。
 
 alembic/
 app/

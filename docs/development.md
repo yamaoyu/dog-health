@@ -1,5 +1,5 @@
 # 開発手順
-## Requirements.md
+## requirements.md
 
 requirements.md はプロジェクト全体の要件を管理する。
 
@@ -15,7 +15,7 @@ requirements.md はプロジェクト全体の要件を管理する。
 - 個別タスク
 - 実装方法
 
-## Issues
+## Issue
 
 Issue は実装単位で作成する。
 
@@ -24,4 +24,3 @@ Issue は実装単位で作成する。
 - 背景・状況
 - 目的
 - タスク一覧
-

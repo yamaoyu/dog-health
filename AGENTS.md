@@ -1,130 +1,133 @@
-# Project Rules
+# プロジェクトルール
 
-## Architecture
+## 言語
+日本人のみがこのプロジェクトに参加しているため日本語とする
 
-* frontend and backend must stay separated
-* keep API contracts explicit
-* prefer simple architecture
-* avoid over abstraction
-* prefer maintainability over theoretical scalability
-* if the current approach becomes too complex, stop and propose a simpler alternative
-* ask before introducing major dependencies
-* prefer explicit/simple code over clever abstractions
+## アーキテクチャ
 
-※ 過剰な abstraction や generic 化は禁止
+* フロントエンドとバックエンドは分離する
+* API 契約は明確にする
+* シンプルなアーキテクチャを優先する
+* 過剰な抽象化は避ける
+* 理論上の拡張性より保守性を優先する
+* 現在の方針が複雑になりすぎる場合は、いったん止めてよりシンプルな代案を提案する
+* 大きな依存関係を追加する前に確認する
+* 巧妙な抽象化より、明示的でシンプルなコードを優先する
+
+※ 過剰な抽象化や汎用化は禁止
 
 ---
 
-## Frontend
+## フロントエンド
 
 * Vue 3 + TypeScript
-* use composition API
-* use Pinia only when needed
-* avoid unnecessary service layers
+* Composition API を使う
+* Pinia は必要な場合だけ使う
+* 不要なサービス層は避ける
 
-※ state 管理は必要になるまで増やさない
+※ 状態管理は必要になるまで増やさない
 
 ---
 
-## Backend
+## バックエンド
 
 * FastAPI
-* validate all input with Pydantic
-* keep services simple
-* keep routers thin
-* avoid premature abstraction
-* avoid unnecessary service layers
+* すべての入力を Pydantic で検証する
+* サービスはシンプルに保つ
+* ルーターは薄く保つ
+* 早すぎる抽象化は避ける
+* 不要なサービス層は避ける
 
-※ service layer の増殖を避ける
-
----
-
-## Security
-
-* validate auth boundaries
-* sanitize user input
-* never expose secrets
+※ サービス層の増殖を避ける
 
 ---
 
-## Workflow
+## セキュリティ
 
-* explain implementation plan first
-* always run tests
-* MVP first
-
-※ 実装前に必ず plan を説明する
+* 認証境界を検証する
+* ユーザー入力を無害化する
+* secret を絶対に露出しない
 
 ---
 
-## Comments
-* avoid obvious comments
-* explain WHY, not WHAT
+## ワークフロー
+
+* 先に実装計画を説明する
+* 常にテストを実行する
+* MVP を優先する
+
+※ 実装前に必ず計画を説明する
+
+---
+
+## コメント
+* 自明なコメントは避ける
+* 何をしているかではなく、なぜそうしているかを説明する
 
 ---
 
 ## docker
-* avoid unnecessary infrastructure complexity
+* 不要なインフラの複雑性を避ける
 
 ---
 
-## Naming
-* Python uses snake_case
-* Vue components use PascalCase
-* composables start with use*
+## 命名
+* Python は snake_case を使う
+* Vue component は PascalCase を使う
+* composable は use* で始める
 
-## Coding Rules
+## コーディングルール
 
-* avoid hardcoded configuration values
-* use environment variables for ports, URLs, and secrets
-* prefer explicit configuration management
+* 設定値の直書きは避ける
+* port、URL、secret は環境変数を使う
+* 明示的な設定管理を優先する
 
-## General Principles
+## 基本方針
 
-* Keep implementation simple
-* Prefer readability over abstraction
-* MVP first
-* Avoid premature optimization
+* 実装はシンプルに保つ
+* 抽象化より読みやすさを優先する
+* MVP を優先する
+* 早すぎる最適化は避ける
 
 ---
 
-## Backend Conventions
+## バックエンドの規約
 
-### API Naming
+### API 命名
 
-Use plural resource names.
+resource name は複数形にする。
 
-Examples:
+例:
 
 * /owners
 * /dogs
 * /owner-dogs
 
-Avoid verb-based endpoints.
+動詞ベースの endpoint は避ける。
 
-Bad:
+悪い例:
 
 * /createDog
 * /getDogs
 
 ---
 
-### HTTP Methods
+### HTTP メソッド
 
-* GET: fetch
-* POST: create
-* PUT: update (full update)
-* PATCH: partial update
-* DELETE: delete
+* GET: 取得
+* POST: 作成
+* PUT: 更新（全体更新）
+* PATCH: 部分更新
+* DELETE: 削除
 
 ---
 
-### Database Naming
+### Database 命名
 
-* table names use snake_case plural
-* primary keys use {table_singular}_id
+* table name は snake_case の複数形にする
+* primary key は {table_singular}_id にする
 
-Examples:
+例:
 
 * dogs.dog_id
 * owners.owner_id
@@ -133,41 +136,39 @@ Examples:
 
 ### SQLAlchemy
 
-* Use declarative models
-* Keep models simple
-* Avoid unnecessary repository layers
+* declarative model を使う
+* model はシンプルに保つ
+* 不要な repository layer は避ける
 
 ---
 
-## Frontend Conventions
+## フロントエンドの規約
 
-* Use feature-based directory structure
-* Use Composition API
-* Keep API calls in dedicated service files
-* Show only information intended for users, not for the system.
+* feature-based なディレクトリ構成にする
+* Composition API を使う
+* API call は専用の service file に置く
+* system 向けではなく、ユーザーに見せるべき情報だけを表示する
 
 ---
 
-## Scope Control
+## スコープ管理
 
-Do not implement:
+明示的に依頼されない限り、以下は実装しない:
 
-* authentication
-* analytics
-* notifications
-* admin features
+* 認証
+* 分析
+* 通知
+* admin 機能
 
-unless explicitly requested.
+## フロントエンドテスト
 
-## Frontend Testing
-
-* Use Vitest for frontend tests.
-* Write integration-style tests for views when testing user interactions.
-* Place view tests under each feature's `views` directory.
-  * Example: `frontend/src/features/auth/views/LoginView.spec.ts`
-* Prefer Testing Library queries in this order:
+* フロントエンドの test には Vitest を使う
+* ユーザー操作をテストする場合、view には統合テスト形式の test を書く
+* view test は各 feature の `views` ディレクトリに置く
+  * 例: `frontend/src/features/auth/views/LoginView.spec.ts`
+* Testing Library の query は次の順で優先する:
   1. `getByRole`
   2. `getByLabelText`
   3. `getByText`
-* Use `data-testid` only when the element cannot reasonably be selected by accessible role, label, or text.
-* Test behavior from the user's perspective, such as clicking buttons and verifying API calls.
+* accessible role、label、text で合理的に選択できない場合だけ `data-testid` を使う
+* button click や API call の検証など、ユーザー視点の振る舞いをテストする

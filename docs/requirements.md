@@ -1,27 +1,27 @@
-# Overview
+# 概要
 
-Personal learning project for AI-assisted development.
+AI 支援開発の個人学習プロジェクト。
 
-This application helps dog owners track:
+このアプリケーションは、犬の飼い主が以下を記録できるようにする:
 
-* daily health condition
-* meals
-* medications
-* symptoms
-* vet visits
-* walk history
+* 日々の健康状態
+* 食事
+* 薬
+* 症状
+* 通院
+* 散歩履歴
 
-The project focuses on:
+このプロジェクトでは以下を重視する:
 
-* maintainable architecture
-* simple implementation
-* explicit frontend/backend separation
-* Docker-based development
-* iterative MVP development
+* 保守しやすいアーキテクチャ
+* シンプルな実装
+* フロントエンド/バックエンドの明確な分離
+* Docker ベースの開発
+* 反復的な MVP 開発
 
 ---
 
-# Technical Constraints
+# 技術制約
 
 * Vue 3 + TypeScript
 * FastAPI
@@ -30,64 +30,64 @@ The project focuses on:
 
 ---
 
-# Architecture Principles
+# アーキテクチャ方針
 
-* maintainability over scalability
-* avoid over abstraction
-* MVP first
-* simple relational data modeling
-* backend-driven API design
+* 拡張性より保守性を優先する
+* 過剰な抽象化を避ける
+* MVP を優先する
+* シンプルなリレーショナルデータモデリング
+* バックエンド主導の API 設計
 
 ---
 
-# Domain Concepts
+# ドメイン概念
 
 ## Owners
 
-Owners can manage multiple dogs.
+飼い主は複数の犬を管理できる。
 
 ## Dogs
 
-Dogs can belong to multiple owners.
+犬は複数の飼い主に紐づけられる。
 
 ## Events
 
-Dog activities are stored as events.
+犬の活動は event として保存する。
 
-Examples:
+例:
 
-* meal
-* walk
-* medicine
-* symptoms
-* hospital
-* memo
+* 食事
+* 散歩
+* 薬
+* 症状
+* 通院
+* メモ
 
-Event types are initially fixed for simplicity.
+シンプルにするため、event type は初期段階では固定する。
 
 ---
 
-# Current MVP Scope
+# 現在の MVP スコープ
 
-## Goal
+## 目的
 
-Dog owners can manage dogs and record health-related events.
+犬の飼い主が犬を管理し、健康関連の event を記録できる。
 
-## Included
+## 含めるもの
 
-- owner management
-- dog management
-- owner-dog relationship
-- register owner and dog page
+- owner 管理
+- dog 管理
+- owner-dog の関係
+- owner と dog の登録ページ
 
-## Not Included
+## 含めないもの
 
-* event recording
-* event history view
-* authentication
-* notifications
-* analytics
-* AI diagnosis
-* custom event types
-* admin dashboard
-* production infrastructure
+* event 記録
+* event 履歴表示
+* 認証
+* 通知
+* 分析
+* AI 診断
+* custom event type
+* 管理ダッシュボード
+* 本番インフラ
