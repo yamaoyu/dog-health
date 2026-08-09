@@ -1,93 +1,90 @@
-# Overview
+# 要件
 
-Personal learning project for AI-assisted development.
+このドキュメントは、プロダクト目的、MVPスコープ、機能別要件への入口を管理する。技術構造は `docs/architecture.md`、database schemaは `docs/schema.md`、開発フローは `docs/development.md` を参照する。
 
-This application helps dog owners track:
+## 概要
 
-* daily health condition
-* meals
-* medications
-* symptoms
-* vet visits
-* walk history
+このアプリケーションは、犬の飼い主が犬を管理し、健康関連の記録を残せるようにする。
 
-The project focuses on:
+記録対象の例:
 
-* maintainable architecture
-* simple implementation
-* explicit frontend/backend separation
-* Docker-based development
-* iterative MVP development
+- 日々の健康状態
+- 食事
+- 薬
+- 症状
+- 通院
+- 散歩履歴
 
----
+## 重視すること
 
-# Technical Constraints
+- 保守しやすい構成
+- シンプルな実装
+- フロントエンド/バックエンドの明確な分離
+- Dockerベースの開発
+- 反復的なMVP開発
 
-* Vue 3 + TypeScript
-* FastAPI
-* PostgreSQL
-* Docker Compose
+## 機能領域
 
----
+現時点では機能別要件ファイルは未作成。要件が肥大化した場合は、`docs/requirements/` 配下に機能別ファイルを作成して分割する。
 
-# Architecture Principles
+想定する分割単位:
 
-* maintainability over scalability
-* avoid over abstraction
-* MVP first
-* simple relational data modeling
-* backend-driven API design
+- 認証/ログイン
+- 飼い主・犬の管理
+- 健康記録
 
----
+## ドメイン概念
 
-# Domain Concepts
+### Owners
 
-## Owners
+飼い主は複数の犬を管理できる。
 
-Owners can manage multiple dogs.
+### Dogs
 
-## Dogs
+犬は複数の飼い主に紐づけられる。
 
-Dogs can belong to multiple owners.
+### Events
 
-## Events
+犬の活動はeventとして保存する。
 
-Dog activities are stored as events.
+例:
 
-Examples:
+- 食事
+- 散歩
+- 薬
+- 症状
+- 通院
+- メモ
 
-* meal
-* walk
-* medicine
-* symptoms
-* hospital
-* memo
+シンプルにするため、event typeは初期段階では固定する。
 
-Event types are initially fixed for simplicity.
+## 現在のMVPスコープ
 
----
+### 目的
 
-# Current MVP Scope
+犬の飼い主が犬を管理し、健康関連のeventを記録できる。
 
-## Goal
+### 含めるもの
 
-Dog owners can manage dogs and record health-related events.
+- owner管理
+- dog管理
+- owner-dogの関係
+- ownerとdogの登録ページ
 
-## Included
+### 含めないもの
 
-- owner management
-- dog management
-- owner-dog relationship
-- register owner and dog page
+- event記録
+- event履歴表示
+- 認証
+- 通知
+- 分析
+- AI診断
+- custom event type
+- 管理ダッシュボード
+- 本番インフラ
 
-## Not Included
+## 更新方針
 
-* event recording
-* event history view
-* authentication
-* notifications
-* analytics
-* AI diagnosis
-* custom event types
-* admin dashboard
-* production infrastructure
+- MVPスコープと実装済みの状態がズレた場合は、このドキュメントを更新する。
+- 個別タスクや実装方法はIssueに書く。
+- 技術構造や実装規約はこのドキュメントに混ぜず、`docs/architecture.md` と `docs/coding-standards.md` に分ける。

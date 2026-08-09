@@ -1,10 +1,13 @@
-## Purpose
+## 目的
 
 
-## Changes
+## 変更点
 
 - 
 
-## Issues
+## 動作確認
+
+
+## 関連Issue
 
 <!-- close #1 -->

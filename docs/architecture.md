@@ -1,96 +1,108 @@
-# Architecture
+# アーキテクチャ
 
----
+このドキュメントは、dog-healthの技術構造を管理する。プロダクト目的とMVPスコープは `docs/requirements.md`、実装規約は `docs/coding-standards.md` を参照する。
 
-# Frontend
+## 技術スタック
 
-* Vue 3
-* TypeScript
-* Composition API
-* Feature-based directory structure
+- フロントエンド: Vue 3 + TypeScript + Vite
+- バックエンド: FastAPI
+- ORM: SQLAlchemy
+- migration: Alembic
+- database: PostgreSQL
+- 開発環境: Docker Compose
 
-Example:
+## 基本方針
 
-frontend/src/features/dogs
-frontend/src/features/events
+- フロントエンドとバックエンドを分離する。
+- API契約を明確にする。
+- シンプルなアーキテクチャを優先する。
+- 拡張性より保守性を優先する。
+- 過剰な抽象化を避ける。
+- バックエンド主導でAPIを設計する。
+- シンプルなリレーショナルデータモデリングを優先する。
 
----
+## フロントエンド
 
-# Backend
+Vue 3、TypeScript、Composition APIを使う。
 
-* FastAPI
-* SQLAlchemy
-* Alembic for migrations
-* REST API
+feature-basedなディレクトリ構成を基本にする。
 
----
+例:
 
-# Database
+- `frontend/src/features/dogs`
+- `frontend/src/features/events`
 
-PostgreSQL is used as the primary database.
+状態管理は必要になるまで増やさない。Piniaは必要になった場合だけ導入する。
 
-Initial tables:
+## バックエンド
 
-* owners
-* dogs
-* owner_dogs
-* events
-* event_types
-* walk_events
-* food_events
-* toilet_events
+FastAPI、SQLAlchemy、Alembicを使う。
 
----
+ルーターは薄く保つ。入力はPydantic schemaで検証する。
 
-# Event Design
+DB分岐によってrouterが大きくなりすぎる場合に限り、repository layerを導入する。理論上の拡張性のためだけにlayerを増やさない。
 
-Events use a common `events` table plus event-specific detail tables.
+基本構成:
 
-Initial event types:
+```text
+backend/
+  alembic/
+  app/
+    routers/
+    models/
+    schemas/
+    db/
+    config.py
+    main.py
+  tests/
+```
 
-* walk
-* food
-* toilet
+## データベース
 
-Custom event types are out of scope for MVP.
+主要なdatabaseとしてPostgreSQLを使う。schemaの詳細は `docs/schema.md` を参照する。
 
----
+初期table:
 
-# Authentication
+- `owners`
+- `dogs`
+- `owner_dogs`
+- `events`
+- `event_types`
+- `walk_events`
+- `food_events`
+- `toilet_events`
 
-Authentication is intentionally simplified for MVP.
+## Event設計
 
-Initial implementation:
+eventは共通の `events` tableと、eventごとの詳細tableを使う。
 
-* owner selection
-* temporary login without password
+初期event type:
 
-Future plan:
+- `walk`
+- `food`
+- `toilet`
 
-* JWT authentication
+custom event typeはMVPのスコープ外とする。
 
----
+## 認証
 
-# Development Environment
+MVPでは認証を意図的に簡略化する。
 
-All services run with Docker Compose.
+初期実装:
 
-Containers:
+- owner選択
+- passwordなしの一時login
 
-* frontend
-* backend
-* db
+将来方針:
 
-# Directory structure
-## backend
-Repository layers are introduced only where DB branching would make routers too large.
+- JWT認証
 
-alembic/
-app/
-　├ routers/
-　├ models/
-　├ schemas/
-　├ db/
-　├ config.py
-　├ main.py
-tests/
+## 開発環境
+
+すべてのserviceはDocker Composeで実行する。
+
+container:
+
+- `frontend`
+- `backend`
+- `db`
