@@ -21,6 +21,14 @@
 - バックエンド主導でAPIを設計する。
 - シンプルなリレーショナルデータモデリングを優先する。
 
+## API契約
+
+フロントエンドとバックエンド間のAPI契約は、FastAPIが生成するOpenAPIを正とする。開発中はバックエンドの `/docs` でSwagger UI、`/openapi.json` でOpenAPI schemaを確認する。
+
+request、response、status code、validation ruleはPydantic schemaとrouterの定義に集約し、同じ契約を別のドキュメントへ重複して記載しない。機能別要件には、画面が利用するAPIとユーザーから見た期待動作だけを記載する。
+
+APIを変更するときは、バックエンドのschemaとテスト、フロントエンドの型と利用箇所を同時に確認する。Swagger UIだけでは伝わりにくい制約がある場合は、該当するschemaまたはendpointへ説明を追加してOpenAPIに反映する。
+
 ## フロントエンド
 
 Vue 3、TypeScript、Composition APIを使う。

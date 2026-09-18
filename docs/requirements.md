@@ -25,13 +25,13 @@
 
 ## 機能領域
 
-現時点では機能別要件ファイルは未作成。要件が肥大化した場合は、`docs/requirements/` 配下に機能別ファイルを作成して分割する。
+画面、ユーザー操作、期待動作などの詳細は、次の機能別要件を参照する。
 
-想定する分割単位:
+- [認証・ログイン](requirements/authenticate.md)
+- [飼い主・犬の管理](requirements/manage-dogs-owners.md)
+- [健康記録](requirements/record-health.md)
 
-- 認証/ログイン
-- 飼い主・犬の管理
-- 健康記録
+このファイルではプロダクト全体の目的とMVPスコープを管理し、機能固有の詳細は機能別要件で管理する。
 
 ## ドメイン概念
 
@@ -69,13 +69,14 @@
 - owner管理
 - dog管理
 - owner-dogの関係
-- ownerとdogの登録ページ
+- passwordなしの一時login
+- ownerとdogの登録・更新画面
+- walk、food、toilet eventの登録
+- eventの日・週・月単位の履歴表示
+- event typeによる履歴の絞り込み
 
 ### 含めないもの
 
-- event記録
-- event履歴表示
-- 認証
 - 通知
 - 分析
 - AI診断

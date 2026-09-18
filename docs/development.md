@@ -6,9 +6,11 @@
 
 - `AGENTS.md`: Codexが毎回守る最上位ルールと参照先。
 - `docs/requirements.md`: プロダクト目的、MVPスコープ、機能別要件への入口。
+- `docs/requirements/`: 画面、操作、期待動作を含む機能別要件。
 - `docs/architecture.md`: フロントエンド、バックエンド、DB、認証、開発環境の技術構造。
 - `docs/coding-standards.md`: 命名、API、DB、テスト、コメント、設定などの実装規約。
 - `docs/schema.md`: database schemaの詳細。
+- `docs/testing.md`: 変更内容に応じたテストと検証の選び方。
 
 ## Harness Engineeringの流れ
 
@@ -52,6 +54,7 @@ Issueに含めない内容:
 - 既存の関連コード
 - 既存の関連テスト
 - API、DB、画面の契約に影響があるか
+- APIに影響する場合、Swagger UIまたはOpenAPI schemaに意図した契約が反映されるか
 - 追加依存が必要か
 
 実装方針が複雑になりすぎる場合は、作業を止めてシンプルな代案を提示する。
@@ -92,7 +95,7 @@ PRは原則としてDraft PRで作成する。
 
 ## 検証方針
 
-変更内容に応じて必要な検証を選ぶ。実行していない検証を成功したものとして扱わない。
+変更内容に応じて必要な検証を選ぶ。詳細は `docs/testing.md` を参照する。実行していない検証を成功したものとして扱わない。
 
 ### フロントエンド変更
 
