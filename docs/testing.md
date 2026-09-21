@@ -20,7 +20,7 @@ pytestでAPIとdatabase modelを検証する。
 - router testではrequest、response、status code、validation、永続化を確認する。
 - repositoryを持つ機能では、routerとrepositoryの責務境界を保って検証する。
 - database model testではtable名、column、constraint、relationがschemaと一致することを確認する。
-- APIの契約はFastAPIが生成するOpenAPIを正とし、schemaまたはrouter変更時はSwagger UIまたは `/openapi.json` への反映も確認する。
+- APIの入力条件と動作はschema、validator、routerの実装とテストで確認する。schemaまたはrouter変更時は、Swagger UIまたは `/openapi.json` に表示される説明や使用例との整合も確認する。
 
 配置:
 
@@ -74,7 +74,7 @@ npm run build
 | 変更 | 必須の候補 | 追加で確認すること |
 | --- | --- | --- |
 | Frontendの画面・component | `npm run type-check`、`npm test` | 主要操作の手動確認、必要なら`npm run build` |
-| FrontendのAPI client | `npm run type-check`、`npm test` | OpenAPIとのmethod、path、payload、response型の一致 |
+| FrontendのAPI client | `npm run type-check`、`npm test` | Backendの実装・テストと、OpenAPIに表示される情報との整合 |
 | Backendのrouter・schema | `python -m pytest` | Swagger UIまたは`/openapi.json`、status code、validation error |
 | Backendのmodel・repository | `python -m pytest` | transaction、constraint、relation、既存データへの影響 |
 | DB schema・migration | `python -m pytest`、migration適用確認 | upgrade順序、constraint、`docs/schema.md` |
@@ -86,12 +86,12 @@ npm run build
 
 ## API変更時の確認
 
-独立したAPI契約書は作成せず、OpenAPIを単一の情報源として扱う。APIを追加または変更するときは、次を確認する。
+独立したAPI契約書は作成しない。OpenAPIは現在のAPIの入出力や使用例を確認するために参照し、記載されていない条件は実装とテストで確認する。APIを追加または変更するときは、次を確認する。
 
-1. Pydantic schemaにrequest、response、validation ruleが表現されている。
+1. Pydantic schemaとvalidatorでrequest、response、validation ruleを確認できる。
 2. routerにmethod、path、response model、成功時のstatus codeが定義されている。
 3. 想定するerror responseがpytestで検証されている。
-4. Swagger UIまたは `/openapi.json` に変更が反映されている。
+4. Swagger UIまたは `/openapi.json` に表示される説明や使用例が、変更後の動作と一致している。
 5. FrontendのAPI client、TypeScript型、画面側のerror処理が契約と一致している。
 6. 仕様上必要な説明がSwaggerから分からない場合は、schemaまたはendpointの説明を追加する。
 

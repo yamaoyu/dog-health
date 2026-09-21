@@ -23,11 +23,11 @@
 
 ## API契約
 
-フロントエンドとバックエンド間のAPI契約は、FastAPIが生成するOpenAPIを正とする。開発中はバックエンドの `/docs` でSwagger UI、`/openapi.json` でOpenAPI schemaを確認する。
+開発中はFastAPIが生成するSwagger UI（`/docs`）とOpenAPI schema（`/openapi.json`）で、現在のAPIの入出力や使用例を確認する。
 
-request、response、status code、validation ruleはPydantic schemaとrouterの定義に集約し、同じ契約を別のドキュメントへ重複して記載しない。機能別要件には、画面が利用するAPIとユーザーから見た期待動作だけを記載する。
+APIの実際の入力条件と動作はPydantic schema、validator、routerの実装とテストで確認する。OpenAPIに表れない条件もあるため、Swagger UIだけで全ての制約を判断しない。機能別要件には、画面が利用するAPIとユーザーから見た期待動作を記載する。
 
-APIを変更するときは、バックエンドのschemaとテスト、フロントエンドの型と利用箇所を同時に確認する。Swagger UIだけでは伝わりにくい制約がある場合は、該当するschemaまたはendpointへ説明を追加してOpenAPIに反映する。
+APIを変更するときは、バックエンドのschemaとテスト、フロントエンドの型と利用箇所を同時に確認する。Swagger UIでの説明や使用例は、実際の動作と一致するように保つ。
 
 ## フロントエンド
 
