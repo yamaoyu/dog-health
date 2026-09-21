@@ -21,6 +21,14 @@
 - バックエンド主導でAPIを設計する。
 - シンプルなリレーショナルデータモデリングを優先する。
 
+## API契約
+
+開発中はFastAPIが生成するSwagger UI（`/docs`）とOpenAPI schema（`/openapi.json`）で、現在のAPIの入出力や使用例を確認する。
+
+APIの実際の入力条件と動作はPydantic schema、validator、routerの実装とテストで確認する。OpenAPIに表れない条件もあるため、Swagger UIだけで全ての制約を判断しない。機能別要件には、画面が利用するAPIとユーザーから見た期待動作を記載する。
+
+APIを変更するときは、バックエンドのschemaとテスト、フロントエンドの型と利用箇所を同時に確認する。Swagger UIでの説明や使用例は、実際の動作と一致するように保つ。
+
 ## フロントエンド
 
 Vue 3、TypeScript、Composition APIを使う。
