@@ -18,7 +18,14 @@ def get_login_db_session() -> Generator[Session, None, None]:
     yield from get_db_session()
 
 
-@router.post("/sessions", response_model=LoginResponse)
+@router.post(
+    "/sessions",
+    response_model=LoginResponse,
+    summary="ログインする",
+    description="ログインIDに一致する飼い主を取得し、現在のユーザーとして返します。",
+    response_description="ログインした飼い主の情報",
+    responses={404: {"description": "ログインIDに一致する飼い主が存在しません。"}},
+)
 def login(
     payload: LoginRequest,
     db_session: Session = Depends(get_login_db_session),

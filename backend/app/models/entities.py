@@ -3,12 +3,15 @@ from __future__ import annotations
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Literal
 
 from sqlalchemy import Boolean, CheckConstraint, Date, DateTime, ForeignKey, Index, Integer, Numeric, String, Text, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.database import Base
+
+DogGender = Literal["male", "female", "unknown"]
 
 
 class Owner(Base):
@@ -41,7 +44,7 @@ class Dog(Base):
     )
     name: Mapped[str] = mapped_column(Text, nullable=False)
     birthday: Mapped[date | None] = mapped_column(Date, nullable=True)
-    gender: Mapped[str | None] = mapped_column(Text, nullable=True)
+    gender: Mapped[DogGender | None] = mapped_column(Text, nullable=True)
 
     owners: Mapped[list["OwnerDog"]] = relationship(back_populates="dog")
     events: Mapped[list["Event"]] = relationship(back_populates="dog")

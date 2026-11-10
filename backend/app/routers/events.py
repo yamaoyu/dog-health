@@ -1,16 +1,34 @@
 from __future__ import annotations
 
 from collections.abc import Generator
+from datetime import date as Date
 from datetime import datetime, time, timedelta
+from typing import Annotated
+from uuid import UUID
 from zoneinfo import ZoneInfo
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.config import Settings, get_settings
 from app.db.database import get_db_session
-from app.repositories.events import CreatedEvent, EventDogNotFoundError, EventRepository, EventTypeNotFoundError, ListedEvent
-from app.schemas.events import EventCreateRequest, EventCreateResponse, EventListQuery, EventListResponse, EventResponse, EventTypeResponse
+from app.repositories.events import (
+    CreatedEvent,
+    EventDogNotFoundError,
+    EventRepository,
+    EventTypeNotFoundError,
+    ListedEvent,
+)
+from app.schemas.events import (
+    EventCreateRequest,
+    EventCreateResponse,
+    EventListQuery,
+    EventListResponse,
+    EventPeriod,
+    EventResponse,
+    EventTypeCode,
+    EventTypeResponse,
+)
 
 
 router = APIRouter(prefix="/events", tags=["events"])
@@ -62,7 +80,15 @@ def to_event_response(listed_event: CreatedEvent | ListedEvent) -> EventResponse
     )
 
 
-@router.post("", response_model=EventCreateResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=EventCreateResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="イベントを登録する",
+    description="犬の散歩、ご飯、トイレのいずれかのイベントを登録します。",
+    response_description="登録したイベントの情報",
+    responses={404: {"description": "指定した犬または利用可能なイベント種別が存在しません。"}},
+)
 def create_event(
     payload: EventCreateRequest,
     db_session: Session = Depends(get_event_db_session),
@@ -84,13 +110,44 @@ def create_event(
     return EventCreateResponse(**to_event_response(created_event).model_dump())
 
 
-@router.get("", response_model=EventListResponse)
+@router.get(
+    "",
+    response_model=EventListResponse,
+    summary="イベント履歴を取得する",
+    description=(
+        "指定した犬のイベントを日・週・月の期間で取得します。"
+        "週は月曜日始まりで、イベント種別による絞り込みもできます。"
+    ),
+    response_description="指定期間に該当するイベントの一覧",
+    responses={404: {"description": "指定した犬が存在しません。"}},
+)
 def list_events(
-    query: EventListQuery = Depends(),
+    dog_id: Annotated[UUID, Query(description="履歴を取得する犬のID")],
+    period: Annotated[
+        EventPeriod,
+        Query(
+            description="取得期間の単位。dayは日、weekは月曜始まりの週、monthは月",
+            examples=["week"],
+        ),
+    ],
+    date: Annotated[
+        Date,
+        Query(description="取得期間の基準日", examples=["2026-06-27"]),
+    ],
+    event_type_code: Annotated[
+        EventTypeCode | None,
+        Query(description="絞り込むイベント種別。省略時は全種別", examples=["walk"]),
+    ] = None,
     db_session: Session = Depends(get_event_db_session),
     event_repository: EventRepository = Depends(get_event_repository),
     settings: Settings = Depends(get_settings),
 ) -> EventListResponse:
+    query = EventListQuery(
+        dog_id=dog_id,
+        period=period,
+        date=date,
+        event_type_code=event_type_code,
+    )
     start_at, end_at = get_event_period_bounds(query, settings)
 
     try:

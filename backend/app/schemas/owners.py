@@ -16,8 +16,18 @@ DogGender = Literal["male", "female", "unknown"]
 
 
 class OwnerCreateRequest(BaseModel):
-    name: str = Field(min_length=OWNERNAME_MIN_LENGTH, max_length=OWNERNAME_MAX_LENGTH)
-    login_id: str = Field(min_length=LOGINID_MIN_LENGTH, max_length=LOGINID_MAX_LENGTH)
+    name: str = Field(
+        min_length=OWNERNAME_MIN_LENGTH,
+        max_length=OWNERNAME_MAX_LENGTH,
+        description="飼い主の表示名",
+        examples=["花子"],
+    )
+    login_id: str = Field(
+        min_length=LOGINID_MIN_LENGTH,
+        max_length=LOGINID_MAX_LENGTH,
+        description="飼い主がログインに使用する一意なID",
+        examples=["hanako"],
+    )
 
     @field_validator("name", mode="before")
     @classmethod
@@ -48,11 +58,15 @@ class OwnerUpdateRequest(BaseModel):
         default=None,
         min_length=LOGINID_MIN_LENGTH,
         max_length=LOGINID_MAX_LENGTH,
+        description="変更後のログインID",
+        examples=["hanako2"],
     )
     name: str | None = Field(
         default=None,
         min_length=OWNERNAME_MIN_LENGTH,
         max_length=OWNERNAME_MAX_LENGTH,
+        description="変更後の表示名",
+        examples=["花子"],
     )
 
     @field_validator("name", mode="before")
@@ -88,19 +102,19 @@ class OwnerUpdateRequest(BaseModel):
 class OwnerResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    owner_id: UUID
-    name: str
-    login_id: str
+    owner_id: UUID = Field(description="飼い主のID")
+    name: str = Field(description="飼い主の表示名", examples=["花子"])
+    login_id: str = Field(description="飼い主のログインID", examples=["hanako"])
 
 
 class OwnerDogSummary(BaseModel):
-    dog_id: UUID
-    name: str
-    birthday: date | None
-    gender: DogGender | None
+    dog_id: UUID = Field(description="犬のID")
+    name: str = Field(description="犬の名前", examples=["ポチ"])
+    birthday: date | None = Field(description="犬の誕生日", examples=["2020-01-01"])
+    gender: DogGender | None = Field(description="犬の性別", examples=["male"])
 
 
 class OwnerDogsResponse(BaseModel):
-    owner_id: UUID
-    owner_name: str
-    dogs: list[OwnerDogSummary]
+    owner_id: UUID = Field(description="飼い主のID")
+    owner_name: str = Field(description="飼い主の表示名", examples=["花子"])
+    dogs: list[OwnerDogSummary] = Field(description="飼い主に紐づく犬の一覧")
