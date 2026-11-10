@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Generator
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from psycopg import OperationalError, connect
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
@@ -12,11 +12,11 @@ from app.config import Settings, get_settings
 
 
 class DatabaseStatus(BaseModel):
-    connected: bool
-    host: str
-    port: int
-    name: str
-    user: str
+    connected: bool = Field(description="databaseへ接続できるか", examples=[True])
+    host: str = Field(description="database host", examples=["db"])
+    port: int = Field(description="database port", examples=[5432])
+    name: str = Field(description="database名", examples=["dog_health"])
+    user: str = Field(description="database接続ユーザー名", examples=["dog_health"])
 
 
 class Base(DeclarativeBase):

@@ -16,10 +16,19 @@ DogGender = Literal["male", "female", "unknown"]
 
 
 class DogCreateRequest(BaseModel):
-    owner_id: UUID
-    name: str = Field(min_length=DOGNAME_MIN_LENGTH, max_length=DOGNAME_MAX_LENGTH)
-    birthday: date | None = None
-    gender: DogGender | None = None
+    owner_id: UUID = Field(description="犬を紐づける飼い主のID")
+    name: str = Field(
+        min_length=DOGNAME_MIN_LENGTH,
+        max_length=DOGNAME_MAX_LENGTH,
+        description="犬の名前",
+        examples=["ポチ"],
+    )
+    birthday: date | None = Field(
+        default=None,
+        description="犬の誕生日",
+        examples=["2020-01-01"],
+    )
+    gender: DogGender | None = Field(default=None, description="犬の性別", examples=["male"])
 
     @field_validator("name", mode="before")
     @classmethod
@@ -35,15 +44,20 @@ class DogCreateRequest(BaseModel):
 
 
 class DogCreateResponse(BaseModel):
-    dog_id: UUID
-    owner_id: UUID
-    name: str
-    birthday: date | None
-    gender: DogGender | None
+    dog_id: UUID = Field(description="登録した犬のID")
+    owner_id: UUID = Field(description="犬を紐づけた飼い主のID")
+    name: str = Field(description="犬の名前", examples=["ポチ"])
+    birthday: date | None = Field(description="犬の誕生日", examples=["2020-01-01"])
+    gender: DogGender | None = Field(description="犬の性別", examples=["male"])
 
 
 class DogOwnerAddRequest(BaseModel):
-    login_id: str = Field(min_length=LOGINID_MIN_LENGTH, max_length=LOGINID_MAX_LENGTH)
+    login_id: str = Field(
+        min_length=LOGINID_MIN_LENGTH,
+        max_length=LOGINID_MAX_LENGTH,
+        description="犬に追加する飼い主のログインID",
+        examples=["taro"],
+    )
 
     @field_validator("login_id", mode="before")
     @classmethod
@@ -59,18 +73,18 @@ class DogOwnerAddRequest(BaseModel):
 
 
 class DogIdName(BaseModel):
-    dog_id: UUID
-    name: str
+    dog_id: UUID = Field(description="犬のID")
+    name: str = Field(description="犬の名前", examples=["ポチ"])
 
 
 class OwnerIdName(BaseModel):
-    owner_id: UUID
-    name: str
+    owner_id: UUID = Field(description="飼い主のID")
+    name: str = Field(description="飼い主の表示名", examples=["太郎"])
 
 
 class DogOwnerAddResponse(BaseModel):
-    dog: DogIdName
-    owner: OwnerIdName
+    dog: DogIdName = Field(description="紐づけ対象の犬")
+    owner: OwnerIdName = Field(description="犬に追加した飼い主")
 
 
 class DogUpdateRequest(BaseModel):
@@ -78,9 +92,15 @@ class DogUpdateRequest(BaseModel):
         default=None,
         min_length=DOGNAME_MIN_LENGTH,
         max_length=DOGNAME_MAX_LENGTH,
+        description="変更後の犬の名前",
+        examples=["ハチ"],
     )
-    birthday: date | None = None
-    gender: DogGender | None = None
+    birthday: date | None = Field(
+        default=None,
+        description="変更後の誕生日",
+        examples=["2021-02-03"],
+    )
+    gender: DogGender | None = Field(default=None, description="変更後の性別", examples=["female"])
 
     @field_validator("name", mode="before")
     @classmethod
@@ -107,21 +127,21 @@ class DogUpdateRequest(BaseModel):
 class DogResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    dog_id: UUID
-    name: str
-    birthday: date | None
-    gender: DogGender | None
+    dog_id: UUID = Field(description="犬のID")
+    name: str = Field(description="犬の名前", examples=["ポチ"])
+    birthday: date | None = Field(description="犬の誕生日", examples=["2020-01-01"])
+    gender: DogGender | None = Field(description="犬の性別", examples=["male"])
 
 
 class DogOwnerSummary(BaseModel):
-    owner_id: UUID
-    name: str
-    role: str | None
+    owner_id: UUID = Field(description="飼い主のID")
+    name: str = Field(description="飼い主の表示名", examples=["花子"])
+    role: str | None = Field(description="犬に対する飼い主の役割", examples=["primary"])
 
 
 class DogOwnersResponse(BaseModel):
-    dog_id: UUID
-    dog_name: str
-    birthday: date | None
-    gender: DogGender | None
-    owners: list[DogOwnerSummary]
+    dog_id: UUID = Field(description="犬のID")
+    dog_name: str = Field(description="犬の名前", examples=["ポチ"])
+    birthday: date | None = Field(description="犬の誕生日", examples=["2020-01-01"])
+    gender: DogGender | None = Field(description="犬の性別", examples=["male"])
+    owners: list[DogOwnerSummary] = Field(description="犬に紐づく飼い主の一覧")

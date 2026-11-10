@@ -6,7 +6,12 @@ from pydantic import BaseModel, Field, field_validator
 
 
 class LoginRequest(BaseModel):
-    login_id: str = Field(min_length=LOGINID_MIN_LENGTH, max_length=LOGINID_MAX_LENGTH)
+    login_id: str = Field(
+        min_length=LOGINID_MIN_LENGTH,
+        max_length=LOGINID_MAX_LENGTH,
+        description="飼い主が登録したログインID",
+        examples=["hanako"],
+    )
 
     @field_validator("login_id", mode="before")
     @classmethod
@@ -22,6 +27,6 @@ class LoginRequest(BaseModel):
 
 
 class LoginResponse(BaseModel):
-    owner_id: UUID
-    name: str
-    login_id: str
+    owner_id: UUID = Field(description="ログインした飼い主のID")
+    name: str = Field(description="飼い主の表示名", examples=["花子"])
+    login_id: str = Field(description="飼い主のログインID", examples=["hanako"])

@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from collections.abc import Generator
+from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Path, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -20,12 +21,28 @@ from app.schemas.owners import (
 
 router = APIRouter(prefix="/owners", tags=["owners"])
 
+OwnerIdPath = Annotated[
+    UUID,
+    Path(
+        description="対象となる飼い主のID",
+        examples=["00000000-0000-0000-0000-000000000001"],
+    ),
+]
+
 
 def get_owner_db_session() -> Generator[Session, None, None]:
     yield from get_db_session()
 
 
-@router.post("", response_model=OwnerResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=OwnerResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="飼い主を登録する",
+    description="名前と重複しないログインIDを指定して飼い主を登録します。",
+    response_description="登録した飼い主の情報",
+    responses={409: {"description": "指定したログインIDは既に使用されています。"}},
+)
 def create_owner(
     payload: OwnerCreateRequest,
     db_session: Session = Depends(get_owner_db_session),
@@ -44,9 +61,19 @@ def create_owner(
     return owner
 
 
-@router.patch("/{owner_id}", response_model=OwnerResponse)
+@router.patch(
+    "/{owner_id}",
+    response_model=OwnerResponse,
+    summary="飼い主プロフィールを更新する",
+    description="指定した飼い主の名前またはログインIDを更新します。",
+    response_description="更新した飼い主の情報",
+    responses={
+        404: {"description": "指定した飼い主が存在しません。"},
+        409: {"description": "指定したログインIDは既に使用されています。"},
+    },
+)
 def update_owner(
-    owner_id: UUID,
+    owner_id: OwnerIdPath,
     payload: OwnerUpdateRequest,
     db_session: Session = Depends(get_owner_db_session),
 ) -> Owner:
@@ -75,9 +102,16 @@ def update_owner(
     return owner
 
 
-@router.get("/{owner_id}/dogs", response_model=OwnerDogsResponse)
+@router.get(
+    "/{owner_id}/dogs",
+    response_model=OwnerDogsResponse,
+    summary="飼い主に紐づく犬を取得する",
+    description="指定した飼い主の情報と、その飼い主に紐づく犬の一覧を返します。",
+    response_description="飼い主の情報と紐づく犬の一覧",
+    responses={404: {"description": "指定した飼い主が存在しません。"}},
+)
 def list_owner_dogs(
-    owner_id: UUID,
+    owner_id: OwnerIdPath,
     db_session: Session = Depends(get_owner_db_session),
 ) -> OwnerDogsResponse:
     owner = db_session.get(Owner, owner_id)

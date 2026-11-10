@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from collections.abc import Generator
+from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Path, status
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -26,12 +27,28 @@ from app.schemas.dogs import (
 
 router = APIRouter(prefix="/dogs", tags=["dogs"])
 
+DogIdPath = Annotated[
+    UUID,
+    Path(
+        description="対象となる犬のID",
+        examples=["00000000-0000-0000-0000-000000000010"],
+    ),
+]
+
 
 def get_dog_db_session() -> Generator[Session, None, None]:
     yield from get_db_session()
 
 
-@router.post("", response_model=DogCreateResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=DogCreateResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="犬を登録する",
+    description="犬を登録し、指定した飼い主に紐づけます。",
+    response_description="登録した犬と飼い主のID",
+    responses={404: {"description": "指定した飼い主が存在しません。"}},
+)
 def create_dog(
     payload: DogCreateRequest,
     db_session: Session = Depends(get_dog_db_session),
@@ -68,9 +85,16 @@ def create_dog(
     "/{dog_id}/owners",
     response_model=DogOwnerAddResponse,
     status_code=status.HTTP_201_CREATED,
+    summary="犬に飼い主を追加する",
+    description="ログインIDで指定した飼い主を犬に紐づけます。",
+    response_description="紐づけた犬と飼い主の情報",
+    responses={
+        404: {"description": "指定した犬またはログインIDに一致する飼い主が存在しません。"},
+        409: {"description": "犬と飼い主は既に紐づけられています。"},
+    },
 )
 def add_dog_owner(
-    dog_id: UUID,
+    dog_id: DogIdPath,
     payload: DogOwnerAddRequest,
     db_session: Session = Depends(get_dog_db_session),
 ) -> DogOwnerAddResponse:
@@ -113,9 +137,16 @@ def add_dog_owner(
     )
 
 
-@router.patch("/{dog_id}", response_model=DogResponse)
+@router.patch(
+    "/{dog_id}",
+    response_model=DogResponse,
+    summary="犬のプロフィールを更新する",
+    description="指定した犬の名前、誕生日、性別のうち、送信された項目を更新します。",
+    response_description="更新した犬の情報",
+    responses={404: {"description": "指定した犬が存在しません。"}},
+)
 def update_dog(
-    dog_id: UUID,
+    dog_id: DogIdPath,
     payload: DogUpdateRequest,
     db_session: Session = Depends(get_dog_db_session),
 ) -> Dog:
@@ -126,7 +157,7 @@ def update_dog(
             detail="犬が見つかりません",
         )
 
-    if "name" in payload.model_fields_set:
+    if payload.name is not None:
         dog.name = payload.name
 
     if "birthday" in payload.model_fields_set:
@@ -140,9 +171,16 @@ def update_dog(
     return dog
 
 
-@router.get("/{dog_id}/owners", response_model=DogOwnersResponse)
+@router.get(
+    "/{dog_id}/owners",
+    response_model=DogOwnersResponse,
+    summary="犬に紐づく飼い主を取得する",
+    description="指定した犬のプロフィールと、その犬に紐づく飼い主の一覧を返します。",
+    response_description="犬の情報と紐づく飼い主の一覧",
+    responses={404: {"description": "指定した犬が存在しません。"}},
+)
 def list_dog_owners(
-    dog_id: UUID,
+    dog_id: DogIdPath,
     db_session: Session = Depends(get_dog_db_session),
 ) -> DogOwnersResponse:
     dog = db_session.get(Dog, dog_id)
