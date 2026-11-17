@@ -14,7 +14,7 @@ dog-healthでは、プロジェクト固有の `create-issue`、`start-issue`、
 
 導入したスキルは `.agents/skills/` に保存してGitで管理する。取得元は [mattpocock/skills](https://github.com/mattpocock/skills) のコミット [`5863806dd4e15c63174bee4e7515a4256792ecfa`](https://github.com/mattpocock/skills/commit/5863806dd4e15c63174bee4e7515a4256792ecfa) とし、MITライセンスの条件に従う。自動更新は行わず、更新先コミットとの差分とスキル間の依存関係を確認してから明示的に更新する。
 
-Matt Pocock Skillsは原則として上流の内容を維持し、dog-health固有のルールは既存スキルと `AGENTS.md`、`docs/` で管理する。用語集はドメイン用語、ADRは設計判断、要件文書はプロダクト要件、課題は実装範囲、スキルは繰り返し使う手順を扱う。
+Matt Pocock Skillsは原則として上流の内容と言語を維持し、dog-health固有のルールは既存スキルと `AGENTS.md`、`docs/` で管理する。このプロジェクトで作成するドキュメントは日本語で記述し、外部から取得したスキルやライセンスは原文のまま管理する。用語集はドメイン用語、ADRは設計判断、要件文書はプロダクト要件、課題は実装範囲、スキルは繰り返し使う手順を扱う。
 
 ## 選択しなかった案
 

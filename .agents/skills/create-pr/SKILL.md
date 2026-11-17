@@ -16,7 +16,7 @@ description: この dog-health リポジトリで実装済みの変更を検証�
 5. Issue番号が存在し、ツールが利用可能な場合は、GitHub MCP/GitHubコネクタを使って関連Issueを確認する。必要なGitHub MCPアクセスが利用できない場合は、代替手段を使わずユーザーに伝える。
 6. 実装内容とIssueの受け入れ条件を比較し、満たしていない条件があれば明示する。
 7. 関係のない変更が含まれていないか確認する。関係のないユーザー変更をコミットやPRに含めない。
-8. `AGENTS.md` と、`.github/pull_request_template.md`、`.github/workflows/`、`frontend/package.json`、`backend/requirements.txt`、影響を受けるテストなどの関連ファイルを読む。
+8. `AGENTS.md`、`GLOSSARY.md`、関連ADRと、`.github/pull_request_template.md`、`.github/workflows/`、`frontend/package.json`、`backend/requirements.txt`、影響を受けるテストなどの関連ファイルを読む。用語、設計判断、Issueとの不整合がないか確認する。
 9. 関連する検証コマンドを実行し、正確な結果を記録する。実際に実行して成功した確認だけを成功と書く。
 10. 検証が失敗した場合は、PR作成前に原因を調査する。失敗が無関係な場合やスコープ内で安全に修正できない場合は、ユーザーに伝える。
 11. 最終差分をもう一度確認する。
