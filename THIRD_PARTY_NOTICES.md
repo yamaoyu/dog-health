@@ -11,3 +11,7 @@
 - ライセンス: MIT License
 
 ライセンス原文は [`licenses/mattpocock-skills-MIT.txt`](licenses/mattpocock-skills-MIT.txt) を参照する。
+
+### ローカル変更
+
+Codexとの互換性のため、`grill-with-docs` と `retro` にあるSkill呼び出しを、依存する `SKILL.md` の直接参照へ置き換えている。その他の外部由来ファイルは原文のまま管理する。
