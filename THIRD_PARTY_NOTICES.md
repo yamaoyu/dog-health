@@ -14,4 +14,10 @@
 
 ### ローカル変更
 
-Codexとの互換性のため、`grill-with-docs` と `retro` にあるSkill呼び出しを、依存する `SKILL.md` の直接参照へ置き換えている。その他の外部由来ファイルは原文のまま管理する。
+Codexとの互換性のため、次の最小限の変更を加えている。
+
+- `grill-with-docs` と `retro`: Skill呼び出しを、依存する `SKILL.md` の直接参照へ置き換えた。
+- `tdd`: 未導入の `codebase-design` 呼び出しを、既存コードを調査してインターフェースとテスト境界を合意する手順へ置き換えた。
+- `code-review`: 未導入のセットアップSkillとtracker文書への依存を、GitHub MCP/GitHubコネクタによるIssue取得手順へ置き換えた。
+
+その他の外部由来ファイルは原文のまま管理する。
