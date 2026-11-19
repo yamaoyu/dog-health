@@ -3,6 +3,7 @@
 ## 最上位ルール
 
 - このリポジトリでは日本語で対応する。
+- このプロジェクトで新規作成するドキュメントは日本語で記述する。外部から取得したSkillやライセンスなどは、出典と内容を保つため原文のまま管理する。
 - 実装前に計画を説明する。
 - 既存の `docs/` と関連コードを確認してから変更する。
 - secret、token、password などの機密情報を露出しない。
@@ -16,6 +17,8 @@
 
 ## 参照ドキュメント
 
+- ドメイン用語: `GLOSSARY.md`
+- 設計判断とその理由: `docs/adr/`
 - 開発フローとHarness Engineering運用: `docs/development.md`
 - コーディング規約: `docs/coding-standards.md`
 - プロダクト要件とMVPスコープ: `docs/requirements.md`
